@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   SwordData,
   SwordAbility,
@@ -13,6 +12,7 @@ import {
   getBaseDamage,
   getSwordBonus,
 } from '@/types/sword';
+import DebugButton from './DebugButton';
 
 const INITIAL_SWORD_DATA: SwordData = {
   characterName: 'Soldado Desertor',
@@ -21,15 +21,11 @@ const INITIAL_SWORD_DATA: SwordData = {
 };
 
 export default function SoldadoPage() {
-  const searchParams = useSearchParams();
-  const showDebug = searchParams.get('debug') !== null;
-
   const [sword, setSword] = useState<SwordData>(INITIAL_SWORD_DATA);
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(sword.characterName);
-  const [debugMode, setDebugMode] = useState(false);
 
   // Load from localStorage
   useEffect(() => {
@@ -130,38 +126,9 @@ export default function SoldadoPage() {
   if (sword.selectedAbilities.level7) allSelectedAbilities.push(sword.selectedAbilities.level7);
   if (sword.selectedAbilities.level10) allSelectedAbilities.push(sword.selectedAbilities.level10);
 
-  const resetCharacterSelection = () => {
-    if (confirm('Tem certeza que deseja resetar a seleção de personagem? Isso irá te levar de volta à tela de seleção.')) {
-      localStorage.removeItem('selected-character');
-      window.location.href = '/';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {/* Debug Button - Only show if ?debug is in URL */}
-      {showDebug && (
-        <>
-          <button
-            onClick={() => setDebugMode(!debugMode)}
-            className="fixed right-4 top-4 z-[9999] rounded bg-purple-900 border-2 border-purple-600 px-4 py-2 text-sm font-bold text-purple-200 shadow-xl hover:bg-purple-800"
-          >
-            🐛 Debug
-          </button>
-
-          {debugMode && (
-            <div className="fixed right-4 top-20 z-[9999] min-w-[200px] rounded-lg border-2 border-purple-600 bg-purple-950 p-4 shadow-2xl">
-              <p className="mb-3 text-sm font-bold text-purple-200">Debug Controls</p>
-              <button
-                onClick={resetCharacterSelection}
-                className="w-full rounded border-2 border-red-600 bg-red-900 px-3 py-2 text-sm font-semibold text-red-200 hover:bg-red-800"
-              >
-                Reset Character Selection
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      <DebugButton />
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
