@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   CompanionData,
   ABILITIES,
@@ -30,13 +30,22 @@ import LevelSectionHeader from '@/app/components/LevelSectionHeader';
 import PathInfoCard from '@/app/components/PathInfoCard';
 import TabNavigation from '@/app/components/TabNavigation';
 
-export default function CaoPage({
-  level,
-  onLevelChange
-}: {
+import {
+  LevelUpRequirement,
+  LevelUpData,
+} from '@/types/levelup';
+
+export interface CaoPageRef {
+  getLevelUpRequirement: (level: number) => LevelUpRequirement | null;
+  confirmLevelUp: (data: LevelUpData) => void;
+}
+
+const CaoPage = forwardRef<CaoPageRef, {
   level: number;
   onLevelChange?: (newLevel: number) => void;
-}) {
+  readOnly?: boolean;
+  initialData?: Record<string, string>;
+}>(function CaoPage({ level, onLevelChange, readOnly = false, initialData }, ref) {
 
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities' | 'hp'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -63,14 +72,24 @@ export default function CaoPage({
 
   const [companion, setCompanion] = useState<CompanionData>(getInitialCompanionData());
 
-  const [showHPModal, setShowHPModal] = useState(false);
-  const [newHPRoll, setNewHPRoll] = useState<string>('1');
-  const [selectedAttribute1, setSelectedAttribute1] = useState<AttributeKey>('strength');
-  const [selectedAttribute2, setSelectedAttribute2] = useState<AttributeKey>('strength');
-  const [pendingLevel, setPendingLevel] = useState<number | null>(null);
-
-  // Load from localStorage on mount
+  // Load from localStorage or initialData on mount
   useEffect(() => {
+    // Se readOnly, carregar dados do initialData ao invés do localStorage
+    if (readOnly && initialData) {
+      const saved = initialData['dogCompanion'];
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setCompanion(data);
+        } catch (e) {
+          console.error('Failed to load saved data:', e);
+        }
+      }
+      setIsLoaded(true);
+      return;
+    }
+
+    // Modo normal: carregar do localStorage
     const saved = localStorage.getItem('dogCompanion');
     if (saved) {
       try {
@@ -81,91 +100,78 @@ export default function CaoPage({
       }
     }
     setIsLoaded(true);
-  }, []);
+  }, [readOnly, initialData]);
 
-  // Save to localStorage whenever companion changes
+  // Save to localStorage whenever companion changes (only if not readOnly)
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && !readOnly) {
       localStorage.setItem('dogCompanion', JSON.stringify(companion));
     }
-  }, [companion, isLoaded]);
+  }, [companion, isLoaded, readOnly]);
 
-  const handleLevelChange = (newLevel: number) => {
-    if (newLevel < 1 || newLevel > 11) return;
+  // Function exposed to parent to get level-up requirements
+  const getLevelUpRequirement = (targetLevel: number): LevelUpRequirement | null => {
+    if (targetLevel < 1 || targetLevel > 11) return null;
+    if (targetLevel <= companion.level) return null; // No requirement for level-down
 
-    if (newLevel > companion.level) {
-      // Leveling up - store pending level and show HP modal
-      setPendingLevel(newLevel);
-      setShowHPModal(true);
-    } else if (newLevel < companion.level) {
-      // Leveling down - remove HP history entries, attribute increases, and abilities
-      const newHistory = companion.hpHistory.filter((entry) => entry.level <= newLevel);
-      const newAttributeIncreases = companion.attributeIncreases.filter((inc) => inc.level <= newLevel);
+    // Check if this level requires any input
+    const isAbilityLevel = [3, 5, 7, 10].includes(targetLevel);
+    const requiresHP = targetLevel > 1; // All level-ups require HP roll
 
-      // Remove abilities above new level
-      const newSelectedAbilities = { ...companion.selectedAbilities };
-      if (newLevel < 3) delete newSelectedAbilities.level3;
-      if (newLevel < 5) delete newSelectedAbilities.level5;
-      if (newLevel < 7) delete newSelectedAbilities.level7;
-      if (newLevel < 10) delete newSelectedAbilities.level10;
+    if (!requiresHP && !isAbilityLevel) return null;
 
-      // Recalculate attributes from scratch
-      const baseAttributes = {
-        strength: { value: 10, modifier: 0 },
-        dexterity: { value: 14, modifier: 2 },
-        constitution: { value: 12, modifier: 1 },
-        intelligence: { value: 3, modifier: -4 },
-        wisdom: { value: 14, modifier: 2 },
-        charisma: { value: 8, modifier: -1 },
+    const requirement: LevelUpRequirement = {
+      equipmentId: 'cao',
+      equipmentName: 'Cão de Guarda',
+      equipmentIcon: '🐕',
+      level: targetLevel,
+    };
+
+    // HP Roll requirement
+    if (requiresHP) {
+      requirement.hpRoll = {
+        diceType: 'd6',
+        currentModifier: companion.attributes.constitution.modifier,
+        modifierLabel: 'CON',
+      };
+    }
+
+    // Attribute Increase requirement (levels 3, 5, 7, 10)
+    if (isAbilityLevel) {
+      requirement.attributeIncrease = {
+        count: 2,
+        currentAttributes: companion.attributes,
       };
 
-      // Apply all remaining attribute increases
-      newAttributeIncreases.forEach((inc) => {
-        inc.attributes.forEach((attr) => {
-          baseAttributes[attr].value += 1;
-          baseAttributes[attr].modifier = calculateModifier(baseAttributes[attr].value);
-        });
-      });
+      // Ability Selection requirement (levels 3, 5, 7, 10)
+      const levelKey = `level${targetLevel}` as keyof typeof companion.selectedAbilities;
+      const abilitiesForLevel = ABILITIES.filter((a) => a.level === targetLevel);
 
-      const newMaxHp = calculateMaxHP(newHistory);
-      setCompanion({
-        ...companion,
-        level: newLevel,
-        attributes: baseAttributes,
-        hpHistory: newHistory,
-        attributeIncreases: newAttributeIncreases,
-        selectedAbilities: newSelectedAbilities,
-        maxHp: newMaxHp,
-        hp: Math.min(companion.hp, newMaxHp),
-      });
+      if (abilitiesForLevel.length > 0) {
+        requirement.abilitySelection = {
+          count: 1,
+          options: abilitiesForLevel,
+          levelKey,
+        };
+      }
     }
+
+    return requirement;
   };
 
-  // Sync companion level with prop level
-  useEffect(() => {
-    if (isLoaded && level !== companion.level) {
-      handleLevelChange(level);
-    }
-  }, [level, isLoaded, companion.level, handleLevelChange]);
+  // Function exposed to parent to confirm level-up with collected data
+  const handleConfirmLevelUp = (data: LevelUpData) => {
+    if (data.equipmentId !== 'cao') return;
 
-  const confirmLevelUp = () => {
-    // Validate HP roll
-    const hpRollValue = parseInt(newHPRoll);
-    if (!newHPRoll || isNaN(hpRollValue) || hpRollValue < 1 || hpRollValue > 6) {
-      alert('Por favor, insira um valor válido entre 1 e 6 para a rolagem do d6.');
-      return;
-    }
-
-    const newLevel = pendingLevel || companion.level + 1;
+    const newLevel = data.level;
     const isAbilityLevel = [3, 5, 7, 10].includes(newLevel);
 
     // Update attributes only on ability levels
     const newAttributes = { ...companion.attributes };
     let newAttributeIncreases = [...companion.attributeIncreases];
 
-    if (isAbilityLevel) {
-      const attr1 = selectedAttribute1;
-      const attr2 = selectedAttribute2;
+    if (isAbilityLevel && data.attributeIncrease) {
+      const [attr1, attr2] = data.attributeIncrease.attributes;
 
       // Increase first attribute
       const newValue1 = newAttributes[attr1].value + 1;
@@ -184,52 +190,113 @@ export default function CaoPage({
       // Save attribute increase
       newAttributeIncreases = [
         ...companion.attributeIncreases,
-        { level: newLevel, attributes: [attr1, attr2] as [AttributeKey, AttributeKey] },
+        { level: newLevel, attributes: [attr1, attr2] },
       ];
     }
 
-    // Use updated CON modifier for HP calculation
-    const conModifier = newAttributes.constitution.modifier;
-    const total = hpRollValue + conModifier;
+    // Process ability selection
+    let newSelectedAbilities = { ...companion.selectedAbilities };
+    if (data.abilitySelection) {
+      newSelectedAbilities = {
+        ...companion.selectedAbilities,
+        [data.abilitySelection.levelKey]: data.abilitySelection.selectedAbility as Ability,
+      };
+    }
 
-    const newEntry: HPHistoryEntry = {
-      level: newLevel,
-      roll: hpRollValue,
-      modifier: conModifier,
-      total,
+    // Process HP roll
+    if (data.hpRoll) {
+      const newEntry: HPHistoryEntry = {
+        level: newLevel,
+        roll: data.hpRoll.roll,
+        modifier: data.hpRoll.modifier,
+        total: data.hpRoll.total,
+      };
+
+      const newHistory = [...companion.hpHistory, newEntry];
+      const newMaxHp = calculateMaxHP(newHistory);
+
+      setCompanion({
+        ...companion,
+        level: newLevel,
+        attributes: newAttributes,
+        hpHistory: newHistory,
+        maxHp: newMaxHp,
+        hp: companion.hp + data.hpRoll.total,
+        attributeIncreases: newAttributeIncreases,
+        selectedAbilities: newSelectedAbilities,
+      });
+    } else {
+      // No HP roll (shouldn't happen for Cão, but handle it)
+      setCompanion({
+        ...companion,
+        level: newLevel,
+        attributes: newAttributes,
+        attributeIncreases: newAttributeIncreases,
+        selectedAbilities: newSelectedAbilities,
+      });
+    }
+  };
+
+  // Handle level-down (called when level prop changes to lower value)
+  const handleLevelChange = (newLevel: number) => {
+    if (newLevel < 1 || newLevel > 11) return;
+    if (newLevel >= companion.level) return; // Level-up is handled by parent now
+
+    // Level-down - remove HP history entries, attribute increases, and abilities
+    const newHistory = companion.hpHistory.filter((entry) => entry.level <= newLevel);
+    const newAttributeIncreases = companion.attributeIncreases.filter((inc) => inc.level <= newLevel);
+
+    // Remove abilities above new level
+    const newSelectedAbilities = { ...companion.selectedAbilities };
+    if (newLevel < 3) delete newSelectedAbilities.level3;
+    if (newLevel < 5) delete newSelectedAbilities.level5;
+    if (newLevel < 7) delete newSelectedAbilities.level7;
+    if (newLevel < 10) delete newSelectedAbilities.level10;
+
+    // Recalculate attributes from scratch
+    const baseAttributes = {
+      strength: { value: 10, modifier: 0 },
+      dexterity: { value: 14, modifier: 2 },
+      constitution: { value: 12, modifier: 1 },
+      intelligence: { value: 3, modifier: -4 },
+      wisdom: { value: 14, modifier: 2 },
+      charisma: { value: 8, modifier: -1 },
     };
 
-    const newHistory = [...companion.hpHistory, newEntry];
-    const newMaxHp = calculateMaxHP(newHistory);
+    // Apply all remaining attribute increases
+    newAttributeIncreases.forEach((inc) => {
+      inc.attributes.forEach((attr) => {
+        baseAttributes[attr].value += 1;
+        baseAttributes[attr].modifier = calculateModifier(baseAttributes[attr].value);
+      });
+    });
 
+    const newMaxHp = calculateMaxHP(newHistory);
     setCompanion({
       ...companion,
       level: newLevel,
-      attributes: newAttributes,
+      attributes: baseAttributes,
       hpHistory: newHistory,
-      maxHp: newMaxHp,
-      hp: companion.hp + total,
       attributeIncreases: newAttributeIncreases,
+      selectedAbilities: newSelectedAbilities,
+      maxHp: newMaxHp,
+      hp: Math.min(companion.hp, newMaxHp),
     });
-
-    setPendingLevel(null);
-    setShowHPModal(false);
-    setNewHPRoll('1');
-    setSelectedAttribute1('strength');
-    setSelectedAttribute2('strength');
   };
 
-  const cancelLevelUp = () => {
-    // Reset to current level when canceling
-    if (pendingLevel && onLevelChange) {
-      onLevelChange(companion.level);
+  // Expose functions to parent via ref
+  useImperativeHandle(ref, () => ({
+    getLevelUpRequirement,
+    confirmLevelUp: handleConfirmLevelUp,
+  }), [companion]);
+
+  // Sync companion level with prop level
+  useEffect(() => {
+    if (isLoaded && level !== companion.level) {
+      handleLevelChange(level);
     }
-    setPendingLevel(null);
-    setShowHPModal(false);
-    setNewHPRoll('1');
-    setSelectedAttribute1('strength');
-    setSelectedAttribute2('strength');
-  };
+  }, [level, isLoaded, companion.level, handleLevelChange]);
+
 
   const handleHPChange = (newHp: number) => {
     setCompanion({
@@ -335,6 +402,7 @@ export default function CaoPage({
           }
           onNameChange={handleNameChange}
           allowNameEdit={true}
+          readOnly={readOnly}
         />
 
         {/* Stats Grid */}
@@ -343,10 +411,10 @@ export default function CaoPage({
             label="PV"
             value={`${companion.hp}/${companion.maxHp}`}
             color="red"
-            interactive={{
+            interactive={!readOnly ? {
               onDecrease: () => handleHPChange(companion.hp - 1),
               onIncrease: () => handleHPChange(companion.hp + 1),
-            }}
+            } : undefined}
           />
           <StatCard label="CA" value={companion.ac} color="blue" />
           <StatCard label="Deslocamento" value={`${companion.speed}m`} color="green" />
@@ -554,8 +622,8 @@ export default function CaoPage({
                           title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
                           description={ability.description}
                           isSelected={isSelected}
-                          canSelect={canSelect}
-                          onClick={() => selectAbility(ability)}
+                          canSelect={canSelect && !readOnly}
+                          onClick={() => !readOnly && selectAbility(ability)}
                           colorClasses={pathColor}
                         />
                       );
@@ -601,139 +669,8 @@ export default function CaoPage({
           </div>
         )}
       </div>
-
-      {/* HP Roll Modal */}
-      {showHPModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-lg border border-amber-700/50 bg-neutral-900 p-6">
-            <h2 className="mb-4 text-2xl font-bold text-amber-100">
-              🎲 Subindo para Nível {pendingLevel || companion.level + 1}
-            </h2>
-
-            {/* HP Roll Section */}
-            <div className="mb-6">
-              <h3 className="mb-2 text-lg font-semibold text-amber-200">Pontos de Vida</h3>
-              <p className="mb-3 text-sm text-neutral-300">
-                Role 1d6 e insira o resultado. Seu modificador de CON será adicionado automaticamente.
-              </p>
-              <label className="mb-2 block text-sm font-semibold text-amber-200">Resultado do d6:</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max="6"
-                value={newHPRoll}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Allow empty string for clearing
-                  if (value === '') {
-                    setNewHPRoll('');
-                    return;
-                  }
-                  // Only allow numbers 1-6
-                  const numValue = parseInt(value);
-                  if (!isNaN(numValue) && numValue >= 1 && numValue <= 6) {
-                    setNewHPRoll(value);
-                  }
-                }}
-                onBlur={() => {
-                  // If empty on blur, set to 1
-                  if (newHPRoll === '' || parseInt(newHPRoll) < 1) {
-                    setNewHPRoll('1');
-                  }
-                }}
-                className="w-full rounded border border-amber-700/50 bg-neutral-800 px-4 py-2 text-xl font-bold text-amber-100"
-                placeholder="1-6"
-              />
-              <div className="mt-3 rounded-lg border border-green-700/50 bg-neutral-950 p-3 text-center">
-                <div className="text-sm text-neutral-400">
-                  {newHPRoll || 0} (d6) + {companion.attributes.constitution.modifier} (CON) ={' '}
-                  <span className="text-lg font-bold text-green-400">
-                    +{(parseInt(newHPRoll) || 0) + companion.attributes.constitution.modifier} PV
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Attribute Selection Section - Only on levels 3, 5, 7, 10 */}
-            {[3, 5, 7, 10].includes(pendingLevel || companion.level + 1) && (
-              <div className="mb-6 rounded-lg border border-purple-700/50 bg-neutral-950 p-4">
-              <h3 className="mb-2 text-lg font-semibold text-purple-200">⬆️ Aumento de Atributos</h3>
-              <p className="mb-4 text-sm text-neutral-300">
-                Escolha dois atributos para aumentar em +1 cada. Você pode escolher o mesmo atributo duas vezes.
-              </p>
-
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-semibold text-purple-200">Primeiro Atributo:</label>
-                <select
-                  value={selectedAttribute1}
-                  onChange={(e) => setSelectedAttribute1(e.target.value as AttributeKey)}
-                  className="w-full rounded border border-purple-700/50 bg-neutral-800 px-3 py-2 text-amber-100"
-                >
-                  {(Object.keys(ATTRIBUTE_NAMES) as AttributeKey[]).map((attr) => (
-                    <option key={attr} value={attr}>
-                      {ATTRIBUTE_ABBR[attr]} - {ATTRIBUTE_NAMES[attr]} ({companion.attributes[attr].value} → {companion.attributes[attr].value + 1})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-semibold text-purple-200">Segundo Atributo:</label>
-                <select
-                  value={selectedAttribute2}
-                  onChange={(e) => setSelectedAttribute2(e.target.value as AttributeKey)}
-                  className="w-full rounded border border-purple-700/50 bg-neutral-800 px-3 py-2 text-amber-100"
-                >
-                  {(Object.keys(ATTRIBUTE_NAMES) as AttributeKey[]).map((attr) => {
-                    const currentValue = companion.attributes[attr].value;
-                    const newValue = currentValue + (selectedAttribute1 === attr ? 2 : 1);
-                    return (
-                      <option key={attr} value={attr}>
-                        {ATTRIBUTE_ABBR[attr]} - {ATTRIBUTE_NAMES[attr]} ({currentValue} → {newValue})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="rounded-lg border border-purple-600/30 bg-purple-950/20 p-3 text-sm text-neutral-300">
-                <div className="font-semibold text-purple-200">Resumo:</div>
-                {selectedAttribute1 === selectedAttribute2 ? (
-                  <div>
-                    {ATTRIBUTE_NAMES[selectedAttribute1]}: {companion.attributes[selectedAttribute1].value} → {companion.attributes[selectedAttribute1].value + 2}
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      {ATTRIBUTE_NAMES[selectedAttribute1]}: {companion.attributes[selectedAttribute1].value} → {companion.attributes[selectedAttribute1].value + 1}
-                    </div>
-                    <div>
-                      {ATTRIBUTE_NAMES[selectedAttribute2]}: {companion.attributes[selectedAttribute2].value} → {companion.attributes[selectedAttribute2].value + 1}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={cancelLevelUp}
-                className="flex-1 rounded bg-neutral-700 px-4 py-2 font-semibold hover:bg-neutral-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmLevelUp}
-                className="flex-1 rounded bg-amber-800 px-4 py-2 font-semibold hover:bg-amber-700"
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-}
+});
+
+export default CaoPage;

@@ -44,6 +44,15 @@ export default function AttributeGrid({ attributes, themeColor = 'amber' }: Attr
     charisma: 'CAR',
   };
 
+  const attributeIcons = {
+    strength: '💪',
+    dexterity: '🎯',
+    constitution: '❤️',
+    intelligence: '🧠',
+    wisdom: '🦉',
+    charisma: '✨',
+  };
+
   return (
     <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-6">
       {Object.entries(attributes).map(([key, attr]) => (
@@ -51,8 +60,11 @@ export default function AttributeGrid({ attributes, themeColor = 'amber' }: Attr
           key={key}
           className={`rounded-lg border-2 ${theme.border} bg-gradient-to-b ${theme.bgGradient} to-neutral-900 p-3 text-center shadow-md`}
         >
-          <div className={`text-xs font-semibold uppercase tracking-wider ${theme.labelText}`}>
-            {attributeLabels[key as keyof typeof attributeLabels]}
+          <div className="flex items-center justify-center gap-1">
+            <span className="text-sm">{attributeIcons[key as keyof typeof attributeIcons]}</span>
+            <div className={`text-xs font-semibold uppercase tracking-wider ${theme.labelText}`}>
+              {attributeLabels[key as keyof typeof attributeLabels]}
+            </div>
           </div>
           <div className={`mt-1 text-xl font-bold ${theme.valueText}`}>{attr.value}</div>
           <div className="text-sm text-neutral-400">

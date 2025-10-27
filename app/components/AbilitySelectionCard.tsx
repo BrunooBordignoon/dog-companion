@@ -22,12 +22,12 @@ export default function AbilitySelectionCard({
   return (
     <div
       onClick={() => canSelect && onClick()}
-      className={`cursor-pointer rounded-lg border p-3 sm:p-4 transition-all ${
-        canSelect
-          ? isSelected
-            ? `${colorClasses} border-2`
-            : `border-neutral-700 bg-neutral-900 hover:border-neutral-600`
-          : 'cursor-not-allowed border-neutral-800 bg-neutral-950/50 opacity-50'
+      className={`rounded-lg border p-3 sm:p-4 transition-all ${
+        isSelected
+          ? `${colorClasses} border-2 ${canSelect ? 'cursor-pointer' : 'cursor-default'}`
+          : canSelect
+            ? 'cursor-pointer border-neutral-700 bg-neutral-900 hover:border-neutral-600'
+            : 'cursor-not-allowed border-neutral-800 bg-neutral-950/50 opacity-50'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -42,7 +42,13 @@ export default function AbilitySelectionCard({
           </div>
           <p className="mt-1 text-sm text-neutral-300">{description}</p>
         </div>
-        {isSelected && <span className="ml-2 text-lg sm:text-xl flex-shrink-0">✓</span>}
+        {isSelected && (
+          <span className="ml-2 flex-shrink-0">
+            <span className="inline-flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-green-600 text-white text-sm font-bold">
+              ✓
+            </span>
+          </span>
+        )}
       </div>
     </div>
   );

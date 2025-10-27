@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ShareButton from './ShareButton';
 
 interface CharacterHeaderProps {
   characterName: string;
@@ -13,6 +14,8 @@ interface CharacterHeaderProps {
   onDescriptionChange: (description: string) => void;
   onLevelChange: (level: number) => void;
   onImageChange: (image: string | null) => void;
+  readOnly?: boolean;
+  characterType?: 'detetive' | 'soldado';
 }
 
 export default function CharacterHeader({
@@ -26,6 +29,8 @@ export default function CharacterHeader({
   onDescriptionChange,
   onLevelChange,
   onImageChange,
+  readOnly = false,
+  characterType,
 }: CharacterHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -100,7 +105,14 @@ export default function CharacterHeader({
   };
 
   return (
-    <div className={`mb-8 rounded-lg border-2 ${theme.border} bg-gradient-to-br ${theme.bgGradient} via-neutral-900 to-neutral-950 p-6 shadow-2xl`}>
+    <div className={`relative mb-8 rounded-lg border-2 ${theme.border} bg-gradient-to-br ${theme.bgGradient} via-neutral-900 to-neutral-950 p-6 shadow-2xl`}>
+      {/* Share Button - Top Right (Absolute Position) */}
+      {!readOnly && characterType && (
+        <div className="absolute right-4 top-4 z-10">
+          <ShareButton characterType={characterType} themeColor={themeColor} />
+        </div>
+      )}
+
       <div className="flex flex-col gap-6 sm:flex-row">
         {/* Character Portrait */}
         <div className="relative flex-shrink-0 self-center sm:self-start">
@@ -112,42 +124,48 @@ export default function CharacterHeader({
                   alt={characterName}
                   className="h-full w-full object-cover"
                 />
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    removeImage();
-                  }}
-                  className="pointer-events-auto absolute right-1 top-1 z-10 rounded bg-red-900/90 p-1 text-xs opacity-0 transition-opacity hover:bg-red-800 group-hover:opacity-100"
-                  title="Remover imagem"
-                >
-                  ✕
-                </button>
+                {!readOnly && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeImage();
+                    }}
+                    className="pointer-events-auto absolute right-1 top-1 z-10 rounded bg-red-900/90 p-1 text-xs opacity-0 transition-opacity hover:bg-red-800 group-hover:opacity-100"
+                    title="Remover imagem"
+                  >
+                    ✕
+                  </button>
+                )}
               </>
             ) : (
               <div className={`flex h-full w-full flex-col items-center justify-center ${theme.iconColor}`}>
                 <span className="text-5xl">{defaultIcon}</span>
               </div>
             )}
-            <label className="absolute inset-0 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                title="Clique para fazer upload da imagem"
-              />
-            </label>
+            {!readOnly && (
+              <label className="absolute inset-0 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  title="Clique para fazer upload da imagem"
+                />
+              </label>
+            )}
           </div>
-          <div className="mt-2 text-center text-xs text-neutral-500">
-            Clique para {characterImage ? 'alterar' : 'adicionar'}
-          </div>
+          {!readOnly && (
+            <div className="mt-2 text-center text-xs text-neutral-500">
+              Clique para {characterImage ? 'alterar' : 'adicionar'}
+            </div>
+          )}
         </div>
 
         {/* Character Info */}
         <div className="flex flex-1 flex-col justify-center gap-4">
           {/* Name */}
-          {isEditingName ? (
+          {!readOnly && isEditingName ? (
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -180,23 +198,26 @@ export default function CharacterHeader({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <h1 className={`flex-1 text-2xl sm:text-3xl font-bold tracking-wide ${theme.nameText} drop-shadow-lg`}>
+            <div className="flex items-baseline gap-2">
+              <h1 className={`text-2xl sm:text-3xl font-bold tracking-wide ${theme.nameText} drop-shadow-lg`}>
                 {characterName}
               </h1>
-              <button
-                onClick={() => setIsEditingName(true)}
-                className="flex-shrink-0 rounded bg-neutral-800/70 px-3 py-1 text-sm hover:bg-neutral-700"
-              >
-                ✏️
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="flex-shrink-0 rounded bg-neutral-800/70 px-2 py-1 text-xs hover:bg-neutral-700"
+                  title="Editar nome"
+                >
+                  ✏️
+                </button>
+              )}
             </div>
           )}
 
           {/* Description/Class and Level */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             {/* Description */}
-            {isEditingDescription ? (
+            {!readOnly && isEditingDescription ? (
               <div className="flex flex-1 items-center gap-2 min-w-0">
                 <input
                   type="text"
@@ -233,33 +254,41 @@ export default function CharacterHeader({
                 <span className={`rounded-lg border ${theme.descBorder} ${theme.descBg} px-3 py-1 sm:px-4 sm:py-2 text-base sm:text-lg font-semibold ${theme.descText}`}>
                   {characterDescription}
                 </span>
-                <button
-                  onClick={() => setIsEditingDescription(true)}
-                  className="flex-shrink-0 rounded bg-neutral-800/70 px-3 py-1 text-sm hover:bg-neutral-700"
-                >
-                  ✏️
-                </button>
+                {!readOnly && (
+                  <button
+                    onClick={() => setIsEditingDescription(true)}
+                    className="flex-shrink-0 rounded bg-neutral-800/70 px-3 py-1 text-sm hover:bg-neutral-700"
+                  >
+                    ✏️
+                  </button>
+                )}
               </div>
             )}
 
             {/* Level Control */}
             <div className="flex items-center gap-3 rounded-lg border border-neutral-700/50 bg-neutral-900/50 px-4 py-2">
               <span className="text-sm text-neutral-400">Nível:</span>
-              <button
-                onClick={() => handleLevelChange(characterLevel - 1)}
-                disabled={characterLevel <= 1}
-                className="rounded bg-neutral-800 px-3 py-1 font-semibold hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                -
-              </button>
-              <span className={`text-2xl font-bold ${theme.levelText}`}>{characterLevel}</span>
-              <button
-                onClick={() => handleLevelChange(characterLevel + 1)}
-                disabled={characterLevel >= 20}
-                className="rounded bg-neutral-800 px-3 py-1 font-semibold hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                +
-              </button>
+              {!readOnly ? (
+                <>
+                  <button
+                    onClick={() => handleLevelChange(characterLevel - 1)}
+                    disabled={characterLevel <= 1}
+                    className="rounded bg-neutral-800 px-3 py-1 font-semibold hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    -
+                  </button>
+                  <span className={`text-2xl font-bold ${theme.levelText}`}>{characterLevel}</span>
+                  <button
+                    onClick={() => handleLevelChange(characterLevel + 1)}
+                    disabled={characterLevel >= 20}
+                    className="rounded bg-neutral-800 px-3 py-1 font-semibold hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </>
+              ) : (
+                <span className={`text-2xl font-bold ${theme.levelText}`}>{characterLevel}</span>
+              )}
             </div>
           </div>
         </div>

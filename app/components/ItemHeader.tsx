@@ -15,6 +15,7 @@ interface ItemHeaderProps {
   onNameChange?: (name: string) => void;
   allowNameEdit?: boolean;
   maxLevel?: number;
+  readOnly?: boolean;
 }
 
 export default function ItemHeader({
@@ -30,6 +31,7 @@ export default function ItemHeader({
   onNameChange,
   allowNameEdit = false,
   maxLevel,
+  readOnly = false,
 }: ItemHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(itemName);
@@ -96,7 +98,7 @@ export default function ItemHeader({
             <div className={`text-xs font-semibold uppercase tracking-wider ${theme.typeColor}`}>
               {itemType}
             </div>
-            {allowNameEdit ? (
+            {allowNameEdit && !readOnly ? (
               isEditingName ? (
                 <div className="mt-1 flex flex-col gap-2 sm:flex-row min-w-0">
                   <input

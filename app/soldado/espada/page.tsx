@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   SwordData,
   SwordAbility,
@@ -12,6 +12,10 @@ import {
   getBaseDamage,
   getSwordBonus,
 } from '@/types/sword';
+import {
+  LevelUpRequirement,
+  LevelUpData,
+} from '@/types/levelup';
 import ItemHeader from '@/app/components/ItemHeader';
 import WarningBanner from '@/app/components/WarningBanner';
 import SectionHeader from '@/app/components/SectionHeader';
@@ -22,13 +26,17 @@ import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
 import LevelSectionHeader from '@/app/components/LevelSectionHeader';
 import TabNavigation from '@/app/components/TabNavigation';
 
-export default function EspadaPage({
-  level,
-  onLevelChange
-}: {
+export interface EspadaPageRef {
+  getLevelUpRequirement: (level: number) => LevelUpRequirement | null;
+  confirmLevelUp: (data: LevelUpData) => void;
+}
+
+const EspadaPage = forwardRef<EspadaPageRef, {
   level: number;
   onLevelChange?: (newLevel: number) => void;
-}) {
+  readOnly?: boolean;
+  initialData?: Record<string, string>;
+}>(function EspadaPage({ level, onLevelChange, readOnly = false, initialData }, ref) {
   const INITIAL_SWORD_DATA: SwordData = {
     characterName: 'Soldado Desertor',
     level: level,
@@ -39,8 +47,23 @@ export default function EspadaPage({
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage
+  // Load from localStorage or initialData
   useEffect(() => {
+    // Se readOnly, carregar dados do initialData ao invés do localStorage
+    if (readOnly && initialData) {
+      const saved = initialData['soldado-sword-data'];
+      if (saved) {
+        try {
+          setSword(JSON.parse(saved));
+        } catch (e) {
+          console.error('Failed to load sword data:', e);
+        }
+      }
+      setIsLoaded(true);
+      return;
+    }
+
+    // Modo normal: carregar do localStorage
     const saved = localStorage.getItem('soldado-sword-data');
     if (saved) {
       try {
@@ -50,17 +73,72 @@ export default function EspadaPage({
       }
     }
     setIsLoaded(true);
-  }, []);
+  }, [readOnly, initialData]);
 
-  // Save to localStorage
+  // Save to localStorage (only if not readOnly)
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && !readOnly) {
       localStorage.setItem('soldado-sword-data', JSON.stringify(sword));
     }
-  }, [sword, isLoaded]);
+  }, [sword, isLoaded, readOnly]);
 
+  // Function exposed to parent to get level-up requirements
+  const getLevelUpRequirement = (targetLevel: number): LevelUpRequirement | null => {
+    if (targetLevel < 1 || targetLevel > 10) return null;
+    if (targetLevel <= sword.level) return null; // No requirement for level-down
+
+    // Espada only requires ability selection on levels 3, 7, 10
+    if (![3, 7, 10].includes(targetLevel)) return null;
+
+    const levelKey = `level${targetLevel}` as keyof typeof sword.selectedAbilities;
+    const abilitiesForLevel = SWORD_ABILITIES.filter((a) => a.awakening === targetLevel);
+
+    if (abilitiesForLevel.length === 0) return null;
+
+    const requirement: LevelUpRequirement = {
+      equipmentId: 'espada',
+      equipmentName: 'Ceifadora dos Sussurros',
+      equipmentIcon: '⚔️',
+      level: targetLevel,
+      abilitySelection: {
+        count: 1,
+        options: abilitiesForLevel,
+        levelKey,
+      },
+    };
+
+    return requirement;
+  };
+
+  // Function exposed to parent to confirm level-up with collected data
+  const handleConfirmLevelUp = (data: LevelUpData) => {
+    if (data.equipmentId !== 'espada') return;
+
+    const newLevel = data.level;
+
+    // Process ability selection
+    if (data.abilitySelection) {
+      setSword({
+        ...sword,
+        level: newLevel,
+        selectedAbilities: {
+          ...sword.selectedAbilities,
+          [data.abilitySelection.levelKey]: data.abilitySelection.selectedAbility as SwordAbility,
+        },
+      });
+    } else {
+      // No ability selection (shouldn't happen for espada level-up, but handle it)
+      setSword({
+        ...sword,
+        level: newLevel,
+      });
+    }
+  };
+
+  // Handle level-down (called when level prop changes to lower value)
   const handleLevelChange = (newLevel: number) => {
     if (newLevel < 1 || newLevel > 10) return;
+    if (newLevel >= sword.level) return; // Level-up is handled by parent now
 
     const newSelectedAbilities = { ...sword.selectedAbilities };
 
@@ -75,6 +153,12 @@ export default function EspadaPage({
       selectedAbilities: newSelectedAbilities,
     });
   };
+
+  // Expose functions to parent via ref
+  useImperativeHandle(ref, () => ({
+    getLevelUpRequirement,
+    confirmLevelUp: handleConfirmLevelUp,
+  }), [sword]);
 
   // Sync sword level with prop level
   useEffect(() => {
@@ -167,6 +251,7 @@ export default function EspadaPage({
             </svg>
           }
           allowNameEdit={false}
+          readOnly={readOnly}
         />
 
         {/* Unselected Abilities Warning */}
@@ -292,8 +377,8 @@ export default function EspadaPage({
                           description={ability.description}
                           category={ABILITY_TYPE_NAMES[ability.type]}
                           isSelected={isSelected}
-                          canSelect={canSelect}
-                          onClick={() => selectAbility(ability)}
+                          canSelect={canSelect && !readOnly}
+                          onClick={() => !readOnly && selectAbility(ability)}
                           colorClasses={ABILITY_TYPE_COLORS[ability.type]}
                         />
                       );
@@ -307,4 +392,6 @@ export default function EspadaPage({
       </div>
     </div>
   );
-}
+});
+
+export default EspadaPage;
