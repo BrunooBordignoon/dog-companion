@@ -631,21 +631,35 @@ export default function CaoPage() {
                 <span>🧭</span> Habilidades de Classe
               </h2>
 
-              <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-md">
-                <h3 className="font-bold text-amber-200">🐾 Nível 1 – Cão Investigador</h3>
+              {/* Nível 1 - Sempre visível */}
+              <div className={`rounded-lg border-2 p-4 shadow-md ${
+                companion.level >= 1
+                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
+                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
+              }`}>
+                <h3 className="flex items-center gap-2 font-bold text-amber-200">
+                  {companion.level < 1 && <span className="text-lg">🔒</span>}
+                  🐾 Nível 1 – Cão Investigador
+                </h3>
                 <p className="mt-1 text-sm text-neutral-300">
                   Vantagem em Percepção/Investigação (cheiro, som, rastros) a 9m. Sente espíritos e mortos-vivos a 6m.
                 </p>
               </div>
 
-              {companion.level >= 2 && (
-                <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-md">
-                  <h3 className="font-bold text-amber-200">🦴 Nível 2 – Laço Inquebrável</h3>
-                  <p className="mt-1 text-sm text-neutral-300">
-                    1/descanso curto: rerrolar teste de Percepção ou Investigação falho.
-                  </p>
-                </div>
-              )}
+              {/* Nível 2 - Sempre visível */}
+              <div className={`rounded-lg border-2 p-4 shadow-md ${
+                companion.level >= 2
+                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
+                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
+              }`}>
+                <h3 className="flex items-center gap-2 font-bold text-amber-200">
+                  {companion.level < 2 && <span className="text-lg">🔒</span>}
+                  🦴 Nível 2 – Laço Inquebrável
+                </h3>
+                <p className="mt-1 text-sm text-neutral-300">
+                  1/descanso curto: rerrolar teste de Percepção ou Investigação falho.
+                </p>
+              </div>
             </div>
 
             {/* Ability Selection */}

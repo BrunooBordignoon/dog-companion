@@ -23,8 +23,6 @@ export default function EspadaPage() {
   const [sword, setSword] = useState<SwordData>(INITIAL_SWORD_DATA);
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(sword.characterName);
 
   // Load from localStorage
   useEffect(() => {
@@ -83,11 +81,6 @@ export default function EspadaPage() {
     return SWORD_ABILITIES.filter((a) => a.awakening === level);
   };
 
-  const saveName = () => {
-    setSword({ ...sword, characterName: tempName });
-    setIsEditingName(false);
-  };
-
   // Check for unselected abilities
   const getUnselectedAbilityLevels = (): number[] => {
     const unselected: number[] = [];
@@ -131,41 +124,7 @@ export default function EspadaPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="mb-4 flex items-center gap-2">
-            {isEditingName ? (
-              <>
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  className="rounded border border-amber-700/50 bg-neutral-900 px-3 py-1 text-2xl font-bold text-amber-100"
-                  autoFocus
-                />
-                <button
-                  onClick={saveName}
-                  className="rounded bg-amber-700 px-3 py-1 text-sm hover:bg-amber-600"
-                >
-                  Salvar
-                </button>
-              </>
-            ) : (
-              <>
-                <h1 className="text-4xl font-bold text-amber-100">{sword.characterName}</h1>
-                <button
-                  onClick={() => {
-                    setTempName(sword.characterName);
-                    setIsEditingName(true);
-                  }}
-                  className="text-amber-600 hover:text-amber-500"
-                  title="Editar nome"
-                >
-                  ✏️
-                </button>
-              </>
-            )}
-          </div>
-
-          <h2 className="text-xl font-semibold text-neutral-300">⚔️ Ceifadora dos Sussurros</h2>
+          <h2 className="mb-2 text-xl font-semibold text-neutral-300">⚔️ Ceifadora dos Sussurros</h2>
           <p className="mt-2 text-sm text-neutral-400">
             {AWAKENING_NAMES[currentAwakening]} • Nível {sword.level}
           </p>
@@ -307,21 +266,35 @@ export default function EspadaPage() {
                 <span>⚔️</span> Habilidades Base
               </h2>
 
-              <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-md">
-                <h3 className="font-bold text-amber-200">⚡ Nível 1 – Lâmina Desperta</h3>
+              {/* Nível 1 - Sempre visível */}
+              <div className={`rounded-lg border-2 p-4 shadow-md ${
+                sword.level >= 1
+                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
+                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
+              }`}>
+                <h3 className="flex items-center gap-2 font-bold text-amber-200">
+                  {sword.level < 1 && <span className="text-lg">🔒</span>}
+                  ⚡ Nível 1 – Lâmina Desperta
+                </h3>
                 <p className="mt-1 text-sm text-neutral-300">
                   A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente.
                 </p>
               </div>
 
-              {sword.level >= 2 && (
-                <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-md">
-                  <h3 className="font-bold text-amber-200">🔊 Nível 2 – Eco do Aço</h3>
-                  <p className="mt-1 text-sm text-neutral-300">
-                    A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros.
-                  </p>
-                </div>
-              )}
+              {/* Nível 2 - Sempre visível */}
+              <div className={`rounded-lg border-2 p-4 shadow-md ${
+                sword.level >= 2
+                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
+                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
+              }`}>
+                <h3 className="flex items-center gap-2 font-bold text-amber-200">
+                  {sword.level < 2 && <span className="text-lg">🔒</span>}
+                  🔊 Nível 2 – Eco do Aço
+                </h3>
+                <p className="mt-1 text-sm text-neutral-300">
+                  A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros.
+                </p>
+              </div>
             </div>
 
             {/* Ability Selection */}
