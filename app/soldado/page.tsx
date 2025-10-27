@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   SwordData,
   SwordAbility,
@@ -20,6 +21,9 @@ const INITIAL_SWORD_DATA: SwordData = {
 };
 
 export default function SoldadoPage() {
+  const searchParams = useSearchParams();
+  const showDebug = searchParams.get('debug') !== null;
+
   const [sword, setSword] = useState<SwordData>(INITIAL_SWORD_DATA);
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -135,24 +139,28 @@ export default function SoldadoPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {/* Debug Button */}
-      <button
-        onClick={() => setDebugMode(!debugMode)}
-        className="fixed right-4 top-4 z-[9999] rounded bg-purple-900 border-2 border-purple-600 px-4 py-2 text-sm font-bold text-purple-200 shadow-xl hover:bg-purple-800"
-      >
-        🐛 Debug
-      </button>
-
-      {debugMode && (
-        <div className="fixed right-4 top-20 z-[9999] min-w-[200px] rounded-lg border-2 border-purple-600 bg-purple-950 p-4 shadow-2xl">
-          <p className="mb-3 text-sm font-bold text-purple-200">Debug Controls</p>
+      {/* Debug Button - Only show if ?debug is in URL */}
+      {showDebug && (
+        <>
           <button
-            onClick={resetCharacterSelection}
-            className="w-full rounded border-2 border-red-600 bg-red-900 px-3 py-2 text-sm font-semibold text-red-200 hover:bg-red-800"
+            onClick={() => setDebugMode(!debugMode)}
+            className="fixed right-4 top-4 z-[9999] rounded bg-purple-900 border-2 border-purple-600 px-4 py-2 text-sm font-bold text-purple-200 shadow-xl hover:bg-purple-800"
           >
-            Reset Character Selection
+            🐛 Debug
           </button>
-        </div>
+
+          {debugMode && (
+            <div className="fixed right-4 top-20 z-[9999] min-w-[200px] rounded-lg border-2 border-purple-600 bg-purple-950 p-4 shadow-2xl">
+              <p className="mb-3 text-sm font-bold text-purple-200">Debug Controls</p>
+              <button
+                onClick={resetCharacterSelection}
+                className="w-full rounded border-2 border-red-600 bg-red-900 px-3 py-2 text-sm font-semibold text-red-200 hover:bg-red-800"
+              >
+                Reset Character Selection
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       <div className="mx-auto max-w-4xl px-4 py-8">
