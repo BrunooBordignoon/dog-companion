@@ -31,7 +31,7 @@ export type SelectedAbilities = {
 
 export type HPHistoryEntry = {
   level: number;
-  roll: number; // d8 roll result
+  roll: number; // d6 roll result
   modifier: number; // CON modifier at that level
   total: number; // roll + modifier
 };
@@ -176,13 +176,13 @@ export function calculateMaxHP(hpHistory: HPHistoryEntry[]): number {
 }
 
 export function getInitialHPHistory(conModifier: number): HPHistoryEntry[] {
-  // Level 1: max d8 (8) + CON modifier
+  // Level 1: max d6 (6) + CON modifier
   return [
     {
       level: 1,
-      roll: 8,
+      roll: 6,
       modifier: conModifier,
-      total: 8 + conModifier,
+      total: 6 + conModifier,
     },
   ];
 }
