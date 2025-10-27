@@ -118,3 +118,22 @@ export const SOLDADO_EQUIPMENTS: Equipment[] = [
     enabled: false,
   },
 ];
+
+// Configuração de nível máximo por equipamento
+export type EquipmentConfig = {
+  maxLevel: number;
+};
+
+export const EQUIPMENT_CONFIG: Record<string, EquipmentConfig> = {
+  cao: { maxLevel: 11 },
+  espada: { maxLevel: 10 },
+  item2: { maxLevel: 15 },
+  item3: { maxLevel: 8 },
+};
+
+// Helper function para calcular nível efetivo
+export function getEffectiveLevel(characterLevel: number, equipmentId: string): number {
+  const config = EQUIPMENT_CONFIG[equipmentId];
+  if (!config) return characterLevel; // Se não tiver config, retorna o nível do personagem
+  return Math.min(characterLevel, config.maxLevel);
+}

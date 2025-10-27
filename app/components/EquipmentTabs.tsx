@@ -10,8 +10,8 @@ type EquipmentTabsProps = {
 
 export default function EquipmentTabs({ equipments, selectedId, onSelect }: EquipmentTabsProps) {
   return (
-    <div className="mb-8">
-      <div className="flex flex-wrap gap-4 sm:gap-6">
+    <div className="mb-8 overflow-x-auto">
+      <div className="flex gap-4 sm:gap-6 min-w-max pb-2">
         {equipments.map((equipment) => {
           const isSelected = equipment.id === selectedId;
           const colors = EQUIPMENT_COLORS[equipment.color];

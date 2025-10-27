@@ -12,14 +12,29 @@ import {
   getBaseDamage,
   getSwordBonus,
 } from '@/types/sword';
+import ItemHeader from '@/app/components/ItemHeader';
+import WarningBanner from '@/app/components/WarningBanner';
+import SectionHeader from '@/app/components/SectionHeader';
+import ContentBox from '@/app/components/ContentBox';
+import AbilityCard from '@/app/components/AbilityCard';
+import BaseAbilityCard from '@/app/components/BaseAbilityCard';
+import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
+import LevelSectionHeader from '@/app/components/LevelSectionHeader';
+import TabNavigation from '@/app/components/TabNavigation';
 
-const INITIAL_SWORD_DATA: SwordData = {
-  characterName: 'Soldado Desertor',
-  level: 1,
-  selectedAbilities: {},
-};
+export default function EspadaPage({
+  level,
+  onLevelChange
+}: {
+  level: number;
+  onLevelChange?: (newLevel: number) => void;
+}) {
+  const INITIAL_SWORD_DATA: SwordData = {
+    characterName: 'Soldado Desertor',
+    level: level,
+    selectedAbilities: {},
+  };
 
-export default function EspadaPage() {
   const [sword, setSword] = useState<SwordData>(INITIAL_SWORD_DATA);
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -60,6 +75,13 @@ export default function EspadaPage() {
       selectedAbilities: newSelectedAbilities,
     });
   };
+
+  // Sync sword level with prop level
+  useEffect(() => {
+    if (isLoaded && level !== sword.level) {
+      handleLevelChange(level);
+    }
+  }, [level, isLoaded, sword.level, handleLevelChange]);
 
   const selectAbility = (ability: SwordAbility) => {
     const awakeningKey = `level${ability.awakening}` as keyof typeof sword.selectedAbilities;
@@ -123,91 +145,56 @@ export default function EspadaPage() {
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <h2 className="mb-2 text-xl font-semibold text-neutral-300">⚔️ Ceifadora dos Sussurros</h2>
-          <p className="mt-2 text-sm text-neutral-400">
-            {AWAKENING_NAMES[currentAwakening]} • Nível {sword.level}
-          </p>
-        </div>
-
-        {/* Level Controls */}
-        <div className="mb-6 flex items-center gap-4 rounded-lg border border-amber-700/30 bg-neutral-900/50 p-4">
-          <button
-            onClick={() => handleLevelChange(sword.level - 1)}
-            disabled={sword.level <= 1}
-            className="rounded bg-red-900/50 px-4 py-2 font-semibold hover:bg-red-900/70 disabled:opacity-30"
-          >
-            -
-          </button>
-          <div className="flex-1 text-center">
-            <div className="text-2xl font-bold text-amber-100">Nível {sword.level}</div>
-            <div className="text-sm text-neutral-400">{AWAKENING_NAMES[currentAwakening]}</div>
-          </div>
-          <button
-            onClick={() => handleLevelChange(sword.level + 1)}
-            disabled={sword.level >= 10}
-            className="rounded bg-green-900/50 px-4 py-2 font-semibold hover:bg-green-900/70 disabled:opacity-30"
-          >
-            +
-          </button>
-        </div>
+        <ItemHeader
+          itemName="Ceifadora dos Sussurros"
+          itemType="Arma Sentiente"
+          itemLevel={sword.level}
+          itemLevelDescription={AWAKENING_NAMES[currentAwakening]}
+          itemSubtitle="Espada Longa"
+          itemAlignment="Caótico Neutro"
+          itemDescription="Lâmina Sussurrante de Almas"
+          themeColor="red"
+          maxLevel={10}
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7 text-red-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M6.92 5H5l9 9 9-9h-1.92L12 13.08z" />
+              <path d="M12 3L2 12h3l7-7 7 7h3L12 3z" />
+            </svg>
+          }
+          allowNameEdit={false}
+        />
 
         {/* Unselected Abilities Warning */}
         {getUnselectedAbilityLevels().length > 0 && (
-          <div className="mb-4 rounded-lg border border-yellow-700/50 bg-yellow-950/30 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚠️</span>
-              <div>
-                <div className="font-semibold text-yellow-200">Habilidades Pendentes</div>
-                <div className="text-sm text-yellow-300">
-                  Você tem habilidades não selecionadas para os níveis: {getUnselectedAbilityLevels().join(', ')}
-                </div>
-                <button
-                  onClick={() => setActiveTab('abilities')}
-                  className="mt-2 rounded bg-yellow-700 px-3 py-1 text-sm font-semibold text-yellow-50 hover:bg-yellow-600"
-                >
-                  Ir para Despertares
-                </button>
-              </div>
-            </div>
-          </div>
+          <WarningBanner
+            title="Habilidades Pendentes"
+            message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
+            buttonText="Ir para Despertares"
+            onButtonClick={() => setActiveTab('abilities')}
+          />
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 border-b border-amber-700/30">
-          <button
-            onClick={() => setActiveTab('combat')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'combat'
-                ? 'border-b-2 border-amber-600 text-amber-100'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            ⚔️ Combate
-          </button>
-          <button
-            onClick={() => setActiveTab('abilities')}
-            className={`relative px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'abilities'
-                ? 'border-b-2 border-amber-600 text-amber-100'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            ✨ Despertares
-            {getUnselectedAbilityLevels().length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-600 text-xs font-bold text-white">
-                {getUnselectedAbilityLevels().length}
-              </span>
-            )}
-          </button>
-        </div>
+        <TabNavigation
+          tabs={[
+            { id: 'combat', label: 'Combate', icon: '⚔️' },
+            { id: 'abilities', label: 'Despertares', icon: '✨', badge: getUnselectedAbilityLevels().length },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities')}
+          themeColor="red"
+        />
 
         {/* Combat Tab */}
         {activeTab === 'combat' && (
           <div className="space-y-6">
             {/* Weapon Stats */}
-            <div className="rounded-lg border border-amber-700/30 bg-neutral-900/50 p-6">
-              <h3 className="mb-4 text-xl font-bold text-amber-100">Estatísticas da Arma</h3>
+            <ContentBox title="Estatísticas da Arma" themeColor="red">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded border border-neutral-700/50 bg-neutral-950/50 p-3">
                   <div className="text-sm text-neutral-400">Tipo</div>
@@ -226,11 +213,10 @@ export default function EspadaPage() {
                   <div className="text-lg font-semibold text-amber-100">Cortante</div>
                 </div>
               </div>
-            </div>
+            </ContentBox>
 
             {/* Active Abilities Summary */}
-            <div className="rounded-lg border border-amber-700/30 bg-neutral-900/50 p-6">
-              <h3 className="mb-4 text-xl font-bold text-amber-100">Habilidades Ativas</h3>
+            <ContentBox title="Habilidades Ativas" themeColor="red">
               {allSelectedAbilities.length === 0 ? (
                 <p className="text-neutral-400">
                   Nenhuma habilidade selecionada. Selecione habilidades na aba Despertares.
@@ -238,22 +224,19 @@ export default function EspadaPage() {
               ) : (
                 <div className="space-y-3">
                   {allSelectedAbilities.map((ability) => (
-                    <div
+                    <AbilityCard
                       key={ability.id}
-                      className={`rounded border p-3 ${ABILITY_TYPE_COLORS[ability.type]}`}
-                    >
-                      <div className="mb-1 flex items-start justify-between gap-2">
-                        <h4 className="font-semibold text-amber-100">{ability.name}</h4>
-                        <span className="whitespace-nowrap rounded bg-neutral-900/50 px-2 py-0.5 text-xs text-neutral-300">
-                          {ABILITY_TYPE_NAMES[ability.type]}
-                        </span>
-                      </div>
-                      <p className="text-sm text-neutral-300">{ability.description}</p>
-                    </div>
+                      name={ability.name}
+                      description={ability.description}
+                      level={ability.awakening}
+                      type={ABILITY_TYPE_NAMES[ability.type]}
+                      borderColor={ABILITY_TYPE_COLORS[ability.type].split(' ')[0]}
+                      bgColor={ABILITY_TYPE_COLORS[ability.type].split(' ')[1]}
+                    />
                   ))}
                 </div>
               )}
-            </div>
+            </ContentBox>
           </div>
         )}
 
@@ -262,39 +245,25 @@ export default function EspadaPage() {
           <div className="space-y-6">
             {/* Base Abilities */}
             <div className="space-y-3">
-              <h2 className="mb-3 flex items-center gap-2 border-b border-amber-700/30 pb-2 font-serif text-xl font-bold text-amber-100">
-                <span>⚔️</span> Habilidades Base
-              </h2>
+              <SectionHeader icon="⚔️" title="Habilidades Base" themeColor="amber" />
 
-              {/* Nível 1 - Sempre visível */}
-              <div className={`rounded-lg border-2 p-4 shadow-md ${
-                sword.level >= 1
-                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
-                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
-              }`}>
-                <h3 className="flex items-center gap-2 font-bold text-amber-200">
-                  {sword.level < 1 && <span className="text-lg">🔒</span>}
-                  ⚡ Nível 1 – Lâmina Desperta
-                </h3>
-                <p className="mt-1 text-sm text-neutral-300">
-                  A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente.
-                </p>
-              </div>
+              <BaseAbilityCard
+                level={1}
+                name="Lâmina Desperta"
+                description="A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente."
+                icon="⚡"
+                isUnlocked={sword.level >= 1}
+                themeColor="amber"
+              />
 
-              {/* Nível 2 - Sempre visível */}
-              <div className={`rounded-lg border-2 p-4 shadow-md ${
-                sword.level >= 2
-                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
-                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
-              }`}>
-                <h3 className="flex items-center gap-2 font-bold text-amber-200">
-                  {sword.level < 2 && <span className="text-lg">🔒</span>}
-                  🔊 Nível 2 – Eco do Aço
-                </h3>
-                <p className="mt-1 text-sm text-neutral-300">
-                  A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros.
-                </p>
-              </div>
+              <BaseAbilityCard
+                level={2}
+                name="Eco do Aço"
+                description="A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros."
+                icon="🔊"
+                isUnlocked={sword.level >= 2}
+                themeColor="amber"
+              />
             </div>
 
             {/* Ability Selection */}
@@ -306,44 +275,27 @@ export default function EspadaPage() {
 
               return (
                 <div key={level}>
-                  <h2 className="mb-3 flex items-center gap-2 text-xl font-bold text-amber-100">
-                    Nível {level} – {AWAKENING_NAMES[level]}
-                    {!canSelect && <span>🔒</span>}
-                    {canSelect && !selectedAbility && (
-                      <span className="rounded-full bg-yellow-600 px-2 py-1 text-xs font-bold text-white">
-                        PENDENTE
-                      </span>
-                    )}
-                  </h2>
+                  <LevelSectionHeader
+                    level={level}
+                    title={AWAKENING_NAMES[level]}
+                    isLocked={!canSelect}
+                    isPending={canSelect && !selectedAbility}
+                  />
                   <div className="space-y-2">
                     {abilities.map((ability) => {
                       const isSelected = selectedAbility?.id === ability.id;
 
                       return (
-                        <div
+                        <AbilitySelectionCard
                           key={ability.id}
-                          onClick={() => canSelect && selectAbility(ability)}
-                          className={`cursor-pointer rounded-lg border p-4 transition-all ${
-                            canSelect
-                              ? isSelected
-                                ? `${ABILITY_TYPE_COLORS[ability.type]} border-2`
-                                : `border-neutral-700 bg-neutral-900 hover:border-neutral-600`
-                              : 'cursor-not-allowed border-neutral-800 bg-neutral-950/50 opacity-50'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="mb-1 flex items-center gap-2">
-                                <h3 className="font-bold text-amber-100">{ability.name}</h3>
-                                <span className="whitespace-nowrap rounded bg-neutral-900/50 px-2 py-0.5 text-xs text-neutral-300">
-                                  {ABILITY_TYPE_NAMES[ability.type]}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-sm text-neutral-300">{ability.description}</p>
-                            </div>
-                            {isSelected && <span className="ml-2 text-xl">✓</span>}
-                          </div>
-                        </div>
+                          title={ability.name}
+                          description={ability.description}
+                          category={ABILITY_TYPE_NAMES[ability.type]}
+                          isSelected={isSelected}
+                          canSelect={canSelect}
+                          onClick={() => selectAbility(ability)}
+                          colorClasses={ABILITY_TYPE_COLORS[ability.type]}
+                        />
                       );
                     })}
                   </div>

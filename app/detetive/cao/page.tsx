@@ -17,15 +17,33 @@ import {
   ATTRIBUTE_ABBR,
   PathType,
 } from '@/types/companion';
+import ItemHeader from '@/app/components/ItemHeader';
+import StatCard from '@/app/components/StatCard';
+import AttributeGrid from '@/app/components/AttributeGrid';
+import WarningBanner from '@/app/components/WarningBanner';
+import SectionHeader from '@/app/components/SectionHeader';
+import ContentBox from '@/app/components/ContentBox';
+import AbilityCard from '@/app/components/AbilityCard';
+import BaseAbilityCard from '@/app/components/BaseAbilityCard';
+import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
+import LevelSectionHeader from '@/app/components/LevelSectionHeader';
+import PathInfoCard from '@/app/components/PathInfoCard';
+import TabNavigation from '@/app/components/TabNavigation';
 
-export default function CaoPage() {
+export default function CaoPage({
+  level,
+  onLevelChange
+}: {
+  level: number;
+  onLevelChange?: (newLevel: number) => void;
+}) {
 
   const [activeTab, setActiveTab] = useState<'combat' | 'abilities' | 'hp'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
 
   const getInitialCompanionData = (): CompanionData => ({
     name: 'Companheiro Canino',
-    level: 1,
+    level: level,
     hp: 7,
     maxHp: 7,
     ac: 13,
@@ -45,12 +63,11 @@ export default function CaoPage() {
 
   const [companion, setCompanion] = useState<CompanionData>(getInitialCompanionData());
 
-  const [editingName, setEditingName] = useState(false);
-  const [tempName, setTempName] = useState(companion.name);
   const [showHPModal, setShowHPModal] = useState(false);
   const [newHPRoll, setNewHPRoll] = useState<string>('1');
   const [selectedAttribute1, setSelectedAttribute1] = useState<AttributeKey>('strength');
   const [selectedAttribute2, setSelectedAttribute2] = useState<AttributeKey>('strength');
+  const [pendingLevel, setPendingLevel] = useState<number | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -59,7 +76,6 @@ export default function CaoPage() {
       try {
         const data = JSON.parse(saved);
         setCompanion(data);
-        setTempName(data.name);
       } catch (e) {
         console.error('Failed to load saved data:', e);
       }
@@ -78,7 +94,8 @@ export default function CaoPage() {
     if (newLevel < 1 || newLevel > 11) return;
 
     if (newLevel > companion.level) {
-      // Leveling up - show HP modal
+      // Leveling up - store pending level and show HP modal
+      setPendingLevel(newLevel);
       setShowHPModal(true);
     } else if (newLevel < companion.level) {
       // Leveling down - remove HP history entries, attribute increases, and abilities
@@ -124,6 +141,13 @@ export default function CaoPage() {
     }
   };
 
+  // Sync companion level with prop level
+  useEffect(() => {
+    if (isLoaded && level !== companion.level) {
+      handleLevelChange(level);
+    }
+  }, [level, isLoaded, companion.level, handleLevelChange]);
+
   const confirmLevelUp = () => {
     // Validate HP roll
     const hpRollValue = parseInt(newHPRoll);
@@ -132,7 +156,7 @@ export default function CaoPage() {
       return;
     }
 
-    const newLevel = companion.level + 1;
+    const newLevel = pendingLevel || companion.level + 1;
     const isAbilityLevel = [3, 5, 7, 10].includes(newLevel);
 
     // Update attributes only on ability levels
@@ -188,6 +212,19 @@ export default function CaoPage() {
       attributeIncreases: newAttributeIncreases,
     });
 
+    setPendingLevel(null);
+    setShowHPModal(false);
+    setNewHPRoll('1');
+    setSelectedAttribute1('strength');
+    setSelectedAttribute2('strength');
+  };
+
+  const cancelLevelUp = () => {
+    // Reset to current level when canceling
+    if (pendingLevel && onLevelChange) {
+      onLevelChange(companion.level);
+    }
+    setPendingLevel(null);
     setShowHPModal(false);
     setNewHPRoll('1');
     setSelectedAttribute1('strength');
@@ -220,9 +257,8 @@ export default function CaoPage() {
     return ABILITIES.filter((a) => a.level === level);
   };
 
-  const saveName = () => {
-    setCompanion({ ...companion, name: tempName });
-    setEditingName(false);
+  const handleNameChange = (newName: string) => {
+    setCompanion({ ...companion, name: newName });
   };
 
   // Check for unselected abilities
@@ -278,224 +314,75 @@ export default function CaoPage() {
 
       <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="mb-6 rounded-lg border-2 border-amber-700/50 bg-gradient-to-b from-amber-950/30 to-neutral-900/50 p-6 shadow-xl">
-          <div className="mb-3 flex items-center gap-3 border-b border-amber-700/30 pb-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-amber-600/50 bg-amber-900/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-7 w-7 text-amber-400"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M18 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-8 0C8.9 4 8 4.9 8 6s.9 2 2 2 2-.9 2-2-.9-2-2-2zM6 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6-6.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5 4.5-2 4.5-4.5-2-4.5-4.5-4.5z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
-                Companheiro Animal
-              </div>
-              {editingName ? (
-                <div className="mt-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    className="flex-1 rounded border border-amber-700/50 bg-neutral-900 px-3 py-2 text-2xl font-bold text-amber-100"
-                    autoFocus
-                    onKeyDown={(e) => e.key === 'Enter' && saveName()}
-                  />
-                  <button
-                    onClick={saveName}
-                    className="rounded bg-amber-800 px-4 py-2 text-sm font-semibold hover:bg-amber-700"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-1 flex items-center gap-2">
-                  <h1
-                    onClick={() => setEditingName(true)}
-                    className="cursor-pointer font-serif text-3xl font-bold text-amber-100 hover:text-amber-200"
-                  >
-                    {companion.name}
-                  </h1>
-                  <button
-                    onClick={() => setEditingName(true)}
-                    className="text-neutral-400 hover:text-amber-200"
-                    title="Editar nome"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              <span className="rounded bg-neutral-800/50 px-2 py-1 font-semibold text-amber-300">
-                Besta Média
-              </span>
-              <span className="text-neutral-400">•</span>
-              <span className="text-neutral-300">Leal Neutro</span>
-            </div>
-            <div className="text-xs italic text-neutral-500">Cão de Guarda Fiel</div>
-          </div>
-        </div>
+        <ItemHeader
+          itemName={companion.name}
+          itemType="Companheiro Animal"
+          itemLevel={companion.level}
+          itemSubtitle="Besta Média"
+          itemAlignment="Leal Neutro"
+          itemDescription="Cão de Guarda Fiel"
+          themeColor="amber"
+          maxLevel={11}
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7 text-amber-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M18 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-8 0C8.9 4 8 4.9 8 6s.9 2 2 2 2-.9 2-2-.9-2-2-2zM6 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6-6.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5 4.5-2 4.5-4.5-2-4.5-4.5-4.5z" />
+            </svg>
+          }
+          onNameChange={handleNameChange}
+          allowNameEdit={true}
+        />
 
         {/* Stats Grid */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border-2 border-amber-700/30 bg-gradient-to-br from-neutral-900 to-neutral-950 p-3 shadow-lg">
-            <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">Nível</div>
-            <div className="mt-1 flex items-center gap-2">
-              <button
-                onClick={() => handleLevelChange(Math.max(1, companion.level - 1))}
-                className="rounded bg-neutral-800 px-2 py-1 text-sm hover:bg-neutral-700"
-              >
-                -
-              </button>
-              <span className="text-2xl font-bold text-amber-100">{companion.level}</span>
-              <button
-                onClick={() => handleLevelChange(Math.min(11, companion.level + 1))}
-                className={`rounded px-2 py-1 text-sm ${
-                  companion.level >= 11
-                    ? 'cursor-not-allowed bg-neutral-900 text-neutral-600'
-                    : 'bg-neutral-800 hover:bg-neutral-700'
-                }`}
-                disabled={companion.level >= 11}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border-2 border-red-700/30 bg-gradient-to-br from-neutral-900 to-neutral-950 p-3 shadow-lg">
-            <div className="text-xs font-semibold uppercase tracking-wider text-red-600">PV</div>
-            <div className="mt-1 flex items-center gap-2">
-              <button
-                onClick={() => handleHPChange(companion.hp - 1)}
-                className="rounded bg-neutral-800 px-2 py-1 text-sm hover:bg-neutral-700"
-              >
-                -
-              </button>
-              <span className="text-2xl font-bold text-red-400">
-                {companion.hp}/{companion.maxHp}
-              </span>
-              <button
-                onClick={() => handleHPChange(companion.hp + 1)}
-                className="rounded bg-neutral-800 px-2 py-1 text-sm hover:bg-neutral-700"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border-2 border-blue-700/30 bg-gradient-to-br from-neutral-900 to-neutral-950 p-3 shadow-lg">
-            <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">CA</div>
-            <div className="mt-1 text-2xl font-bold text-blue-400">{companion.ac}</div>
-          </div>
-
-          <div className="rounded-lg border-2 border-green-700/30 bg-gradient-to-br from-neutral-900 to-neutral-950 p-3 shadow-lg">
-            <div className="text-xs font-semibold uppercase tracking-wider text-green-600">Deslocamento</div>
-            <div className="mt-1 text-2xl font-bold text-green-400">{companion.speed}m</div>
-          </div>
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard
+            label="PV"
+            value={`${companion.hp}/${companion.maxHp}`}
+            color="red"
+            interactive={{
+              onDecrease: () => handleHPChange(companion.hp - 1),
+              onIncrease: () => handleHPChange(companion.hp + 1),
+            }}
+          />
+          <StatCard label="CA" value={companion.ac} color="blue" />
+          <StatCard label="Deslocamento" value={`${companion.speed}m`} color="green" />
         </div>
 
         {/* Attributes */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-6">
-          {Object.entries(companion.attributes).map(([key, attr]) => (
-            <div key={key} className="rounded-lg border-2 border-amber-700/20 bg-gradient-to-b from-amber-950/20 to-neutral-900 p-3 text-center shadow-md">
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
-                {key === 'strength' && 'FOR'}
-                {key === 'dexterity' && 'DES'}
-                {key === 'constitution' && 'CON'}
-                {key === 'intelligence' && 'INT'}
-                {key === 'wisdom' && 'SAB'}
-                {key === 'charisma' && 'CAR'}
-              </div>
-              <div className="mt-1 text-xl font-bold text-amber-100">{attr.value}</div>
-              <div className="text-sm text-neutral-400">
-                ({attr.modifier >= 0 ? '+' : ''}
-                {attr.modifier})
-              </div>
-            </div>
-          ))}
-        </div>
+        <AttributeGrid attributes={companion.attributes} themeColor="amber" />
 
         {/* Unselected Abilities Warning */}
         {getUnselectedAbilityLevels().length > 0 && (
-          <div className="mb-4 rounded-lg border border-yellow-700/50 bg-yellow-950/30 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚠️</span>
-              <div>
-                <div className="font-semibold text-yellow-200">Habilidades Pendentes</div>
-                <div className="text-sm text-yellow-300">
-                  Você tem habilidades não selecionadas para os níveis: {getUnselectedAbilityLevels().join(', ')}
-                </div>
-                <button
-                  onClick={() => setActiveTab('abilities')}
-                  className="mt-2 rounded bg-yellow-700 px-3 py-1 text-sm font-semibold text-yellow-50 hover:bg-yellow-600"
-                >
-                  Ir para Habilidades
-                </button>
-              </div>
-            </div>
-          </div>
+          <WarningBanner
+            title="Habilidades Pendentes"
+            message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
+            buttonText="Ir para Habilidades"
+            onButtonClick={() => setActiveTab('abilities')}
+          />
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 border-b-2 border-amber-700/50">
-          <button
-            onClick={() => setActiveTab('combat')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'combat'
-                ? 'border-b-2 border-amber-600 text-amber-100'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            ⚔️ Combate
-          </button>
-          <button
-            onClick={() => setActiveTab('abilities')}
-            className={`relative px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'abilities'
-                ? 'border-b-2 border-amber-600 text-amber-100'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            🧭 Habilidades
-            {getUnselectedAbilityLevels().length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-600 text-xs font-bold text-white">
-                {getUnselectedAbilityLevels().length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('hp')}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === 'hp'
-                ? 'border-b-2 border-amber-600 text-amber-100'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            ❤️ Pontos de Vida
-          </button>
-        </div>
+        <TabNavigation
+          tabs={[
+            { id: 'combat', label: 'Combate', icon: '⚔️' },
+            { id: 'abilities', label: 'Habilidades', icon: '🧭', badge: getUnselectedAbilityLevels().length },
+            { id: 'hp', label: 'Pontos de Vida', icon: '❤️' },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities' | 'hp')}
+          themeColor="amber"
+        />
 
         {/* Combat Tab */}
         {activeTab === 'combat' && (
           <div className="space-y-6">
             {/* Attacks */}
             <div>
-              <h2 className="mb-3 flex items-center gap-2 border-b border-amber-700/30 pb-2 font-serif text-xl font-bold text-amber-100">
-                <span className="text-red-500">⚔️</span> Ataques
-              </h2>
+              <SectionHeader icon="⚔️" title="Ataques" themeColor="amber" />
 
               {/* Base Attack */}
               <div className="mb-3 rounded-lg border-2 border-red-700/50 bg-gradient-to-br from-red-950/20 to-neutral-900 p-4 shadow-lg">
@@ -536,26 +423,21 @@ export default function CaoPage() {
             </div>
 
             {/* Active Abilities */}
-            <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-lg">
-              <h2 className="mb-4 flex items-center gap-2 border-b border-amber-700/30 pb-2 font-serif text-xl font-bold text-amber-100">
-                <span>📜</span> Habilidades Ativas
-              </h2>
+            <ContentBox title="Habilidades Ativas" icon="📜" themeColor="amber">
               <div className="space-y-3">
                 {/* Base Abilities */}
-                <div className="rounded-lg border border-amber-600/30 bg-neutral-800/50 p-3">
-                  <div className="font-semibold text-amber-200">🐾 Cão Investigador (Nível 1)</div>
-                  <div className="mt-1 text-sm text-neutral-300">
-                    Vantagem em Percepção/Investigação (cheiro, som, rastros) a 9m. Sente espíritos e mortos-vivos a 6m.
-                  </div>
-                </div>
+                <AbilityCard
+                  name="🐾 Cão Investigador"
+                  description="Vantagem em Percepção/Investigação (cheiro, som, rastros) a 9m. Sente espíritos e mortos-vivos a 6m."
+                  level={1}
+                />
 
                 {companion.level >= 2 && (
-                  <div className="rounded-lg border border-amber-600/30 bg-neutral-800/50 p-3">
-                    <div className="font-semibold text-amber-200">🦴 Laço Inquebrável (Nível 2)</div>
-                    <div className="mt-1 text-sm text-neutral-300">
-                      1/descanso curto: rerrolar teste de Percepção ou Investigação falho.
-                    </div>
-                  </div>
+                  <AbilityCard
+                    name="🦴 Laço Inquebrável"
+                    description="1/descanso curto: rerrolar teste de Percepção ou Investigação falho."
+                    level={2}
+                  />
                 )}
 
                 {/* Selected Path Abilities */}
@@ -564,13 +446,16 @@ export default function CaoPage() {
                   // Only show abilities at or below current level
                   if (ability.level > companion.level) return null;
                   const pathColor = PATH_COLORS[ability.path];
+                  const [borderColor, bgColor] = pathColor.split(' ');
                   return (
-                    <div key={ability.id} className={`rounded-lg border p-3 ${pathColor}`}>
-                      <div className="font-semibold text-amber-200">
-                        {PATH_NAMES[ability.path]} – {ability.name} (Nível {ability.level})
-                      </div>
-                      <div className="mt-1 text-sm text-neutral-300">{ability.description}</div>
-                    </div>
+                    <AbilityCard
+                      key={ability.id}
+                      name={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                      description={ability.description}
+                      level={ability.level}
+                      borderColor={borderColor}
+                      bgColor={bgColor}
+                    />
                   );
                 })}
 
@@ -580,7 +465,7 @@ export default function CaoPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </ContentBox>
           </div>
         )}
 
@@ -588,78 +473,59 @@ export default function CaoPage() {
         {activeTab === 'abilities' && (
           <div className="space-y-6">
             {/* Path Overview */}
-            <div className="rounded-lg border-2 border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900 p-4 shadow-lg">
-              <h2 className="mb-4 flex items-center gap-2 border-b border-amber-700/30 pb-2 font-serif text-xl font-bold text-amber-100">
-                <span>🛤️</span> Caminhos de Evolução
-              </h2>
+            <ContentBox title="Caminhos de Evolução" icon="🛤️" themeColor="amber">
               <div className="grid gap-3 sm:grid-cols-3">
-                {/* Presa Firme */}
-                <div className="rounded-lg border-2 border-red-700/50 bg-gradient-to-br from-red-950/20 to-neutral-900 p-3">
-                  <h3 className="mb-2 font-bold text-red-400">⚔️ Presa Firme</h3>
-                  <p className="text-xs text-neutral-300">
-                    Caminho <span className="font-semibold text-red-300">ofensivo</span>. Focado em causar dano e
-                    perseguir inimigos. Ideal para combates diretos e agressivos.
-                  </p>
-                </div>
-
-                {/* Escudo Fiel */}
-                <div className="rounded-lg border-2 border-blue-700/50 bg-gradient-to-br from-blue-950/20 to-neutral-900 p-3">
-                  <h3 className="mb-2 font-bold text-blue-400">🛡️ Escudo Fiel</h3>
-                  <p className="text-xs text-neutral-300">
-                    Caminho <span className="font-semibold text-blue-300">defensivo</span>. Protege o dono e
-                    absorve dano. Ideal para manter aliados vivos em situações perigosas.
-                  </p>
-                </div>
-
-                {/* Olhar Fantasma */}
-                <div className="rounded-lg border-2 border-purple-700/50 bg-gradient-to-br from-purple-950/20 to-neutral-900 p-3">
-                  <h3 className="mb-2 font-bold text-purple-400">🔍 Olhar Fantasma</h3>
-                  <p className="text-xs text-neutral-300">
-                    Caminho <span className="font-semibold text-purple-300">investigativo</span>. Detecta o
-                    sobrenatural e revela o oculto. Ideal para exploração e mistérios.
-                  </p>
-                </div>
+                <PathInfoCard
+                  icon="⚔️"
+                  title="Presa Firme"
+                  subtitle="ofensivo"
+                  description="Focado em causar dano e perseguir inimigos. Ideal para combates diretos e agressivos."
+                  borderColor="border-red-700/50"
+                  bgGradient="from-red-950/20"
+                />
+                <PathInfoCard
+                  icon="🛡️"
+                  title="Escudo Fiel"
+                  subtitle="defensivo"
+                  description="Protege o dono e absorve dano. Ideal para manter aliados vivos em situações perigosas."
+                  borderColor="border-blue-700/50"
+                  bgGradient="from-blue-950/20"
+                />
+                <PathInfoCard
+                  icon="🔍"
+                  title="Olhar Fantasma"
+                  subtitle="investigativo"
+                  description="Detecta o sobrenatural e revela o oculto. Ideal para exploração e mistérios."
+                  borderColor="border-purple-700/50"
+                  bgGradient="from-purple-950/20"
+                />
               </div>
               <p className="mt-3 text-xs italic text-neutral-500">
                 💡 Dica: Você pode mesclar caminhos diferentes em cada nível para criar um cão único!
               </p>
-            </div>
+            </ContentBox>
 
             {/* Base Abilities */}
             <div className="space-y-3">
-              <h2 className="mb-3 flex items-center gap-2 border-b border-amber-700/30 pb-2 font-serif text-xl font-bold text-amber-100">
-                <span>🧭</span> Habilidades de Classe
-              </h2>
+              <SectionHeader icon="🧭" title="Habilidades de Classe" themeColor="amber" />
 
-              {/* Nível 1 - Sempre visível */}
-              <div className={`rounded-lg border-2 p-4 shadow-md ${
-                companion.level >= 1
-                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
-                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
-              }`}>
-                <h3 className="flex items-center gap-2 font-bold text-amber-200">
-                  {companion.level < 1 && <span className="text-lg">🔒</span>}
-                  🐾 Nível 1 – Cão Investigador
-                </h3>
-                <p className="mt-1 text-sm text-neutral-300">
-                  Vantagem em Percepção/Investigação (cheiro, som, rastros) a 9m. Sente espíritos e mortos-vivos a 6m.
-                </p>
-              </div>
+              <BaseAbilityCard
+                level={1}
+                name="Cão Investigador"
+                description="Vantagem em Percepção/Investigação (cheiro, som, rastros) a 9m. Sente espíritos e mortos-vivos a 6m."
+                icon="🐾"
+                isUnlocked={companion.level >= 1}
+                themeColor="amber"
+              />
 
-              {/* Nível 2 - Sempre visível */}
-              <div className={`rounded-lg border-2 p-4 shadow-md ${
-                companion.level >= 2
-                  ? 'border-amber-700/50 bg-gradient-to-br from-amber-950/20 to-neutral-900'
-                  : 'border-neutral-800 bg-neutral-950/50 opacity-50'
-              }`}>
-                <h3 className="flex items-center gap-2 font-bold text-amber-200">
-                  {companion.level < 2 && <span className="text-lg">🔒</span>}
-                  🦴 Nível 2 – Laço Inquebrável
-                </h3>
-                <p className="mt-1 text-sm text-neutral-300">
-                  1/descanso curto: rerrolar teste de Percepção ou Investigação falho.
-                </p>
-              </div>
+              <BaseAbilityCard
+                level={2}
+                name="Laço Inquebrável"
+                description="1/descanso curto: rerrolar teste de Percepção ou Investigação falho."
+                icon="🦴"
+                isUnlocked={companion.level >= 2}
+                themeColor="amber"
+              />
             </div>
 
             {/* Ability Selection */}
@@ -671,42 +537,27 @@ export default function CaoPage() {
 
               return (
                 <div key={level}>
-                  <h2 className="mb-3 flex items-center gap-2 text-xl font-bold text-amber-100">
-                    Nível {level} – Escolha de Caminho
-                    {!canSelect && <span>🔒</span>}
-                    {canSelect && !selectedAbility && (
-                      <span className="rounded-full bg-yellow-600 px-2 py-1 text-xs font-bold text-white">
-                        PENDENTE
-                      </span>
-                    )}
-                  </h2>
+                  <LevelSectionHeader
+                    level={level}
+                    title="Escolha de Caminho"
+                    isLocked={!canSelect}
+                    isPending={canSelect && !selectedAbility}
+                  />
                   <div className="space-y-2">
                     {abilities.map((ability) => {
                       const isSelected = selectedAbility?.id === ability.id;
                       const pathColor = PATH_COLORS[ability.path];
 
                       return (
-                        <div
+                        <AbilitySelectionCard
                           key={ability.id}
-                          onClick={() => canSelect && selectAbility(ability)}
-                          className={`cursor-pointer rounded-lg border p-4 transition-all ${
-                            canSelect
-                              ? isSelected
-                                ? `${pathColor} border-2`
-                                : `border-neutral-700 bg-neutral-900 hover:border-neutral-600`
-                              : 'cursor-not-allowed border-neutral-800 bg-neutral-950/50 opacity-50'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-bold text-amber-100">
-                                {PATH_NAMES[ability.path]} – {ability.name}
-                              </h3>
-                              <p className="mt-1 text-sm text-neutral-300">{ability.description}</p>
-                            </div>
-                            {isSelected && <span className="ml-2 text-xl">✓</span>}
-                          </div>
-                        </div>
+                          title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                          description={ability.description}
+                          isSelected={isSelected}
+                          canSelect={canSelect}
+                          onClick={() => selectAbility(ability)}
+                          colorClasses={pathColor}
+                        />
                       );
                     })}
                   </div>
@@ -756,7 +607,7 @@ export default function CaoPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md rounded-lg border border-amber-700/50 bg-neutral-900 p-6">
             <h2 className="mb-4 text-2xl font-bold text-amber-100">
-              🎲 Subindo para Nível {companion.level + 1}
+              🎲 Subindo para Nível {pendingLevel || companion.level + 1}
             </h2>
 
             {/* HP Roll Section */}
@@ -805,7 +656,7 @@ export default function CaoPage() {
             </div>
 
             {/* Attribute Selection Section - Only on levels 3, 5, 7, 10 */}
-            {[3, 5, 7, 10].includes(companion.level + 1) && (
+            {[3, 5, 7, 10].includes(pendingLevel || companion.level + 1) && (
               <div className="mb-6 rounded-lg border border-purple-700/50 bg-neutral-950 p-4">
               <h3 className="mb-2 text-lg font-semibold text-purple-200">⬆️ Aumento de Atributos</h3>
               <p className="mb-4 text-sm text-neutral-300">
@@ -868,12 +719,7 @@ export default function CaoPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowHPModal(false);
-                  setNewHPRoll('1');
-                  setSelectedAttribute1('strength');
-                  setSelectedAttribute2('strength');
-                }}
+                onClick={cancelLevelUp}
                 className="flex-1 rounded bg-neutral-700 px-4 py-2 font-semibold hover:bg-neutral-600"
               >
                 Cancelar
