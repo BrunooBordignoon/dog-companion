@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import DebugButton from './DebugButton';
 
 export default function Home() {
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCharacterId, setPendingCharacterId] = useState<string | null>(null);
-  const [debugMode, setDebugMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -40,13 +40,6 @@ export default function Home() {
   const cancelSelection = () => {
     setPendingCharacterId(null);
     setShowConfirmModal(false);
-  };
-
-  // Debug function to reset selection
-  const resetSelection = () => {
-    localStorage.removeItem('selected-character');
-    setSelectedCharacter(null);
-    window.location.reload();
   };
 
   const characters = [
@@ -86,38 +79,10 @@ export default function Home() {
 
   const pendingCharacter = characters.find(c => c.id === pendingCharacterId);
 
-  // ALWAYS show debug button, even when redirecting
-  const debugButton = (
-    <>
-      <button
-        onClick={() => setDebugMode(!debugMode)}
-        className="fixed right-4 top-4 z-[9999] rounded bg-purple-900 border-2 border-purple-600 px-4 py-2 text-sm font-bold text-purple-200 shadow-xl hover:bg-purple-800"
-        style={{ position: 'fixed', right: '16px', top: '16px' }}
-      >
-        🐛 Debug
-      </button>
-
-      {debugMode && (
-        <div
-          className="fixed right-4 top-20 z-[9999] min-w-[200px] rounded-lg border-2 border-purple-600 bg-purple-950 p-4 shadow-2xl"
-          style={{ position: 'fixed', right: '16px', top: '80px' }}
-        >
-          <p className="mb-3 text-sm font-bold text-purple-200">Debug Controls</p>
-          <button
-            onClick={resetSelection}
-            className="w-full rounded border-2 border-red-600 bg-red-900 px-3 py-2 text-sm font-semibold text-red-200 hover:bg-red-800"
-          >
-            Reset Character Selection
-          </button>
-        </div>
-      )}
-    </>
-  );
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
-        {debugButton}
+        <DebugButton />
         <p className="text-neutral-400">Carregando...</p>
       </div>
     );
@@ -125,7 +90,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {debugButton}
+      <DebugButton />
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
 
