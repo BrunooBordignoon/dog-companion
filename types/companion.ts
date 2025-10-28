@@ -71,17 +71,19 @@ export type CompanionData = {
 export const ABILITIES: Ability[] = [
   // Nível 3 - Presa Firme
   {
-    id: 'mordida-precisa',
-    name: 'Mordida Precisa',
-    description: 'Ataques de mordida causam 1d8 + Destreza de dano. Se o dono atacar o mesmo alvo no mesmo turno, o cão causa +1 de dano adicional.',
+    id: 'mordida-silenciosa',
+    name: 'Mordida Silenciosa',
+    description: 'Quando o cão realiza um ataque de mordida a partir de uma emboscada (furtivo, invisível ou antes de ser detectado), ele tem vantagem na jogada de ataque e causa +1d6 de dano adicional. O cão se move em silêncio mortal, sua presença oculta até o último instante. Quando ataca, é rápido e certeiro — a vítima raramente ouve o rosnado antes da mordida perfurar a carne.',
     path: 'presa-firme',
     level: 3,
     type: 'passive',
     actionType: 'none',
     range: 'Corpo a corpo',
     duration: 'Permanente',
-    damage: '1d8 + DES (+1 se dono atacar o mesmo alvo)',
+    damage: '+1d6 adicional',
     damageType: 'Perfurante',
+    condition: 'Vantagem no ataque',
+    limit: '1x por combate',
   },
   // Nível 3 - Escudo Fiel
   {
@@ -100,7 +102,7 @@ export const ABILITIES: Ability[] = [
   {
     id: 'lamento-dos-ecos',
     name: 'Lamento dos Ecos',
-    description: 'Quando o cão atingir um espírito, morto-vivo ou aparição, o alvo perde resistência a dano não mágico até o início do próximo turno do dono. O dono causa +1 de dano adicional no primeiro ataque que acertar esse alvo.',
+    description: 'Quando o cão atingir um espírito, morto-vivo ou aparição, o alvo perde resistência a dano não mágico até o início do próximo turno do dono. O vínculo espiritual entre o cão e seu dono permite que apenas o dono possa acertar o espírito enfraquecido, causando +1 de dano adicional no primeiro ataque. O lamento ecoa pela conexão que os une, tornando o invisível vulnerável.',
     path: 'eco-espiritual',
     level: 3,
     type: 'passive',
@@ -108,7 +110,7 @@ export const ABILITIES: Ability[] = [
     range: 'Corpo a corpo',
     duration: 'Até o início do próximo turno do dono',
     damage: '+1 dano adicional para o dono',
-    condition: 'Alvo perde resistência a dano não mágico',
+    condition: 'Alvo perde resistência a dano não mágico, apenas o dono pode atacar',
   },
   // Nível 5 - Presa Firme
   {
@@ -323,7 +325,7 @@ export const BASE_COMPANION_ABILITIES: BaseCompanionAbility[] = [
   {
     id: 'cao-investigador',
     name: 'Cão Investigador',
-    description: 'Vantagem em testes de Percepção e Investigação relacionados a cheiro, som e rastros. Sente presenças espirituais e mortos-vivos (sem direção exata). Ataques do cão contam como mágicos (podem ferir espíritos, aparições e mortos-vivos incorpóreos). Proficiência em Percepção e Investigação.',
+    description: 'Vantagem em testes de Investigação relacionados a cheiro, som e rastros. Sente presenças espirituais e mortos-vivos (sem direção exata). Ataques do cão contam como mágicos (podem ferir espíritos, aparições e mortos-vivos incorpóreos). Proficiência em Percepção, Investigação e Furtividade.',
     type: 'passive',
     level: 1,
     actionType: 'none',
@@ -331,9 +333,19 @@ export const BASE_COMPANION_ABILITIES: BaseCompanionAbility[] = [
     duration: 'Permanente',
   },
   {
+    id: 'comando-delegado',
+    name: 'Comando Delegado',
+    description: 'O dono do cão pode deixá-lo sob o comando de outro jogador ou NPC até que ordene que pare. A palavra do dono permanece absoluta — ele pode retomar o controle a qualquer momento com uma ação livre.',
+    type: 'passive',
+    level: 1,
+    actionType: 'free',
+    duration: 'Até o dono ordenar o retorno',
+    range: 'Próprio',
+  },
+  {
     id: 'laco-inquebravel',
     name: 'Laço Inquebrável',
-    description: 'Pode rerrolar um teste de Percepção ou Investigação que tenha falhado. Deve aceitar o novo resultado.',
+    description: 'O dono pode rerrolar um teste de Percepção ou Investigação que tenha falhado, guiado pela conexão profunda com seu companheiro canino. Deve aceitar o novo resultado.',
     type: 'active',
     level: 2,
     actionType: 'free',

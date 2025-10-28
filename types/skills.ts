@@ -188,15 +188,16 @@ export function getInitialSkills(): Skills {
 }
 
 /**
- * Cria um objeto Skills para o Cão com Investigação e Percepção proficientes
+ * Cria um objeto Skills para o Cão com Investigação, Percepção e Furtividade proficientes
  */
 export function getDogInitialSkills(): Skills {
   const skills = getInitialSkills();
 
-  // Cão é proficiente em Investigação e Percepção desde o nível 1
-  // E tem vantagem nessas perícias (habilidade "Cão Investigador")
+  // Cão é proficiente em Investigação, Percepção e Furtividade desde o nível 1
+  // E tem vantagem apenas em Investigação (habilidade "Cão Investigador")
   skills.investigation = { proficient: true, expertise: false, advantage: true };
-  skills.perception = { proficient: true, expertise: false, advantage: true };
+  skills.perception = { proficient: true, expertise: false };
+  skills.stealth = { proficient: true, expertise: false };
 
   return skills;
 }
