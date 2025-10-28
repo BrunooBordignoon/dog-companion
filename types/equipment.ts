@@ -150,7 +150,7 @@ export type EquipmentConfig = {
 };
 
 export const EQUIPMENT_CONFIG: Record<string, EquipmentConfig> = {
-  cao: { maxLevel: 11 },
+  cao: { maxLevel: 10 },
   espada: { maxLevel: 10 },
   grimorio: { maxLevel: 11 },
   item2: { maxLevel: 15 },

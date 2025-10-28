@@ -45,8 +45,11 @@ export default function HPRollEditor({
   };
 
   const theme = themeClasses[themeColor];
-  const currentRoll = hpEntry?.roll || maxDice;
+  // If no entry or roll is 0, it's pending (no value)
+  const isPending = !hpEntry || hpEntry.roll === 0;
+  const currentRoll = hpEntry?.roll || 0;
   const totalHP = currentRoll + conModifier;
+  // Locked if no entry exists
   const isLocked = !hpEntry;
   const isLevel1 = level === 1;
 
@@ -63,45 +66,73 @@ export default function HPRollEditor({
 
       {!isLocked && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-neutral-400 text-sm">
-              {isLevel1 ? `Máximo do d${maxDice}:` : `Rolagem do d${maxDice}:`}
-            </span>
-            <span className="text-neutral-200 font-bold">{currentRoll}</span>
-          </div>
+          {isPending ? (
+            <div className="text-center py-4">
+              <p className="text-yellow-500 font-semibold mb-2">⚠️ Pendente</p>
+              <p className="text-neutral-400 text-sm">
+                {isLevel1
+                  ? 'Você sempre ganha o máximo de PV no nível 1'
+                  : 'Selecione o resultado da rolagem do dado'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400 text-sm">
+                  {isLevel1 ? `Máximo do d${maxDice}:` : `Rolagem do d${maxDice}:`}
+                </span>
+                <span className="text-neutral-200 font-bold">{currentRoll}</span>
+              </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-neutral-300 font-semibold">PV Ganhos:</span>
-            <span className={`text-lg font-bold ${theme.text}`}>
-              +{totalHP}
-            </span>
-          </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-300 font-semibold">PV Ganhos:</span>
+                <span className={`text-lg font-bold ${theme.text}`}>
+                  +{totalHP}
+                </span>
+              </div>
+            </>
+          )}
 
-          {isLevel1 && (
+          {!isPending && isLevel1 && (
             <p className="text-xs text-neutral-500 italic">
               No nível 1, você sempre ganha o máximo de PV possível.
             </p>
           )}
 
-          {canEdit && !isLevel1 && (
+          {canEdit && (
             <div className="border-t border-neutral-700 pt-3">
               <p className="text-xs text-neutral-500 mb-2">
-                Ajustar rolagem (1-{maxDice}):
+                {isLevel1
+                  ? `Confirmar máximo (${maxDice}):`
+                  : `Selecionar rolagem (1-${maxDice}):`}
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {Array.from({ length: maxDice }, (_, i) => i + 1).map((value) => (
+                {isLevel1 ? (
                   <button
-                    key={value}
-                    onClick={() => onUpdate(value)}
+                    onClick={() => onUpdate(maxDice)}
                     className={`px-3 py-2 rounded text-sm font-bold transition-colors ${
-                      value === currentRoll
+                      currentRoll === maxDice
                         ? `${theme.button} text-white`
                         : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                     }`}
                   >
-                    {value}
+                    {maxDice}
                   </button>
-                ))}
+                ) : (
+                  Array.from({ length: maxDice }, (_, i) => i + 1).map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => onUpdate(value)}
+                      className={`px-3 py-2 rounded text-sm font-bold transition-colors ${
+                        value === currentRoll && !isPending
+                          ? `${theme.button} text-white`
+                          : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                      }`}
+                    >
+                      {value}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}

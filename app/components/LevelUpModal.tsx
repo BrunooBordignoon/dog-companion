@@ -16,7 +16,7 @@ import { SwordAbility } from '@/types/sword';
 import { GrimorioAbility } from '@/types/grimorio';
 import { SkillKey } from '@/types/skills';
 import ContentBox from './ContentBox';
-import AbilitySelectionCard from './AbilitySelectionCard';
+import EnhancedAbilityCard from './EnhancedAbilityCard';
 import ExpertiseSelector from './ExpertiseSelector';
 
 interface LevelUpModalProps {
@@ -315,12 +315,39 @@ export default function LevelUpModal({
                         const isSelected =
                           data.abilitySelection?.selectedAbility.id === ability.id;
 
+                        // Determine ability type
+                        let abilityType: 'passive' | 'active' | 'reaction' = 'active';
+                        if ('type' in ability) {
+                          abilityType = ability.type as 'passive' | 'active' | 'reaction';
+                        } else if ('description' in ability) {
+                          // For companion abilities, determine from description
+                          const desc = ability.description.toLowerCase();
+                          if (desc.includes('passiva')) {
+                            abilityType = 'passive';
+                          } else if (desc.includes('reativa') || desc.includes('reação')) {
+                            abilityType = 'reaction';
+                          }
+                        }
+
+                        // Get optional D&D details if they exist
+                        const hasDetails = 'actionType' in ability || 'range' in ability || 'damage' in ability;
+
                         return (
-                          <AbilitySelectionCard
+                          <EnhancedAbilityCard
                             key={ability.id}
-                            title={ability.name}
+                            name={ability.name}
                             description={ability.description}
-                            category={'type' in ability ? (ability.type === 'passive' ? 'Passiva' : 'Ativa') : undefined}
+                            type={abilityType}
+                            actionType={'actionType' in ability ? ability.actionType : undefined}
+                            range={'range' in ability ? ability.range : undefined}
+                            duration={'duration' in ability ? ability.duration : undefined}
+                            damageType={'damageType' in ability ? ability.damageType : undefined}
+                            damage={'damage' in ability ? ability.damage : undefined}
+                            savingThrow={'savingThrow' in ability ? ability.savingThrow : undefined}
+                            condition={'condition' in ability ? ability.condition : undefined}
+                            limit={'limit' in ability ? ability.limit : undefined}
+                            cost={'cost' in ability ? ability.cost : undefined}
+                            isUnlocked={true}
                             isSelected={isSelected}
                             canSelect={true}
                             onClick={() =>
@@ -330,7 +357,7 @@ export default function LevelUpModal({
                                 req.abilitySelection!.levelKey
                               )
                             }
-                            colorClasses="border-amber-700/50 bg-amber-950/20"
+                            themeColor={themeColor}
                           />
                         );
                       })}

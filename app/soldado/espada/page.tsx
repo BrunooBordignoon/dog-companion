@@ -23,8 +23,13 @@ import ContentBox from '@/app/components/ContentBox';
 import AbilityCard from '@/app/components/AbilityCard';
 import BaseAbilityCard from '@/app/components/BaseAbilityCard';
 import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
-import LevelSectionHeader from '@/app/components/LevelSectionHeader';
+import EnhancedAbilityCard from '@/app/components/EnhancedAbilityCard';
+import LevelAccordion from '@/app/components/LevelAccordion';
 import TabNavigation from '@/app/components/TabNavigation';
+import {
+  getEspadaPendingItemsForLevel,
+  getTotalEspadaPendingCount,
+} from '@/app/utils/pendingItems';
 
 export interface EspadaPageRef {
   getLevelUpRequirement: (level: number) => LevelUpRequirement | null;
@@ -179,21 +184,8 @@ const EspadaPage = forwardRef<EspadaPageRef, {
     });
   };
 
-  const canSelectAbilityForLevel = (level: 3 | 7 | 10): boolean => {
-    return sword.level >= level;
-  };
-
   const getAbilitiesForLevel = (level: 3 | 7 | 10): SwordAbility[] => {
     return SWORD_ABILITIES.filter((a) => a.awakening === level);
-  };
-
-  // Check for unselected abilities
-  const getUnselectedAbilityLevels = (): number[] => {
-    const unselected: number[] = [];
-    if (sword.level >= 3 && !sword.selectedAbilities.level3) unselected.push(3);
-    if (sword.level >= 7 && !sword.selectedAbilities.level7) unselected.push(7);
-    if (sword.level >= 10 && !sword.selectedAbilities.level10) unselected.push(10);
-    return unselected;
   };
 
   if (!isLoaded) {
@@ -255,10 +247,10 @@ const EspadaPage = forwardRef<EspadaPageRef, {
         />
 
         {/* Unselected Abilities Warning */}
-        {getUnselectedAbilityLevels().length > 0 && (
+        {getTotalEspadaPendingCount(sword.level, sword.selectedAbilities) > 0 && (
           <WarningBanner
             title="Habilidades Pendentes"
-            message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
+            message="Você tem habilidades não selecionadas. Vá para a aba Progressão para completar suas escolhas."
             buttonText="Ir para Progressão"
             onButtonClick={() => setActiveTab('abilities')}
           />
@@ -268,7 +260,7 @@ const EspadaPage = forwardRef<EspadaPageRef, {
         <TabNavigation
           tabs={[
             { id: 'combat', label: 'Combate', icon: '⚔️' },
-            { id: 'abilities', label: 'Progressão', icon: '✨', badge: getUnselectedAbilityLevels().length },
+            { id: 'abilities', label: 'Progressão', icon: '✨', badge: getTotalEspadaPendingCount(sword.level, sword.selectedAbilities) },
           ]}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities')}
@@ -309,14 +301,24 @@ const EspadaPage = forwardRef<EspadaPageRef, {
               ) : (
                 <div className="space-y-3">
                   {allSelectedAbilities.map((ability) => (
-                    <AbilityCard
+                    <EnhancedAbilityCard
                       key={ability.id}
                       name={ability.name}
                       description={ability.description}
-                      level={ability.awakening}
-                      type={ABILITY_TYPE_NAMES[ability.type]}
-                      borderColor={ABILITY_TYPE_COLORS[ability.type].split(' ')[0]}
-                      bgColor={ABILITY_TYPE_COLORS[ability.type].split(' ')[1]}
+                      type={ability.type}
+                      actionType={ability.actionType}
+                      range={ability.range}
+                      duration={ability.duration}
+                      damageType={ability.damageType}
+                      damage={ability.damage}
+                      savingThrow={ability.savingThrow}
+                      condition={ability.condition}
+                      limit={ability.limit}
+                      cost={ability.cost}
+                      isUnlocked={true}
+                      isSelected={false}
+                      canSelect={false}
+                      themeColor="red"
                     />
                   ))}
                 </div>
@@ -327,81 +329,124 @@ const EspadaPage = forwardRef<EspadaPageRef, {
 
         {/* Abilities Tab */}
         {activeTab === 'abilities' && (
-          <div className="space-y-6">
-            {/* Level 1 */}
-            <div>
-              <LevelSectionHeader
-                level={1}
-                title="Despertar Inicial"
-                isLocked={sword.level < 1}
-                isPending={false}
-              />
-              <div className="space-y-2">
-                <BaseAbilityCard
-                  level={1}
-                  name="Lâmina Desperta"
-                  description="A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente."
-                  icon="⚡"
-                  isUnlocked={sword.level >= 1}
-                  themeColor="amber"
-                />
-              </div>
-            </div>
+          <div className="space-y-3">
+            {/* Level 1 - Eco do Aço */}
+            <LevelAccordion
+              level={1}
+              title="Despertar Inicial"
+              isLocked={sword.level < 1}
+              isPending={false}
+              pendingCount={0}
+              defaultOpen={sword.level === 1}
+              themeColor="red"
+            >
+              {(() => {
+                const ability = SWORD_ABILITIES.find(a => a.awakening === 1);
+                return ability ? (
+                  <EnhancedAbilityCard
+                    name={ability.name}
+                    description={ability.description}
+                    type={ability.type}
+                    actionType={ability.actionType}
+                    range={ability.range}
+                    duration={ability.duration}
+                    damageType={ability.damageType}
+                    damage={ability.damage}
+                    savingThrow={ability.savingThrow}
+                    condition={ability.condition}
+                    limit={ability.limit}
+                    cost={ability.cost}
+                    isUnlocked={sword.level >= 1}
+                    isSelected={false}
+                    canSelect={false}
+                    themeColor="red"
+                  />
+                ) : null;
+              })()}
+            </LevelAccordion>
 
-            {/* Level 2 */}
-            <div>
-              <LevelSectionHeader
-                level={2}
-                title="Despertar Menor"
-                isLocked={sword.level < 2}
-                isPending={false}
-              />
-              <div className="space-y-2">
-                <BaseAbilityCard
-                  level={2}
-                  name="Eco do Aço"
-                  description="A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros."
-                  icon="🔊"
-                  isUnlocked={sword.level >= 2}
-                  themeColor="amber"
-                />
-              </div>
-            </div>
+            {/* Level 2 - Lâmina Desperta */}
+            <LevelAccordion
+              level={2}
+              title="Despertar Menor"
+              isLocked={sword.level < 2}
+              isPending={false}
+              pendingCount={0}
+              defaultOpen={sword.level === 2}
+              themeColor="red"
+            >
+              {(() => {
+                const ability = SWORD_ABILITIES.find(a => a.awakening === 2);
+                return ability ? (
+                  <EnhancedAbilityCard
+                    name={ability.name}
+                    description={ability.description}
+                    type={ability.type}
+                    actionType={ability.actionType}
+                    range={ability.range}
+                    duration={ability.duration}
+                    damageType={ability.damageType}
+                    damage={ability.damage}
+                    savingThrow={ability.savingThrow}
+                    condition={ability.condition}
+                    limit={ability.limit}
+                    cost={ability.cost}
+                    isUnlocked={sword.level >= 2}
+                    isSelected={false}
+                    canSelect={false}
+                    themeColor="red"
+                  />
+                ) : null;
+              })()}
+            </LevelAccordion>
 
             {/* Ability Selection */}
             {[3, 7, 10].map((level) => {
-              const canSelect = canSelectAbilityForLevel(level as 3 | 7 | 10);
               const levelKey = `level${level}` as keyof typeof sword.selectedAbilities;
               const selectedAbility = sword.selectedAbilities[levelKey];
               const abilities = getAbilitiesForLevel(level as 3 | 7 | 10);
+              const pendingInfo = getEspadaPendingItemsForLevel(level, sword.level, sword.selectedAbilities);
 
               return (
-                <div key={level}>
-                  <LevelSectionHeader
-                    level={level}
-                    title={AWAKENING_NAMES[level]}
-                    isLocked={!canSelect}
-                    isPending={canSelect && !selectedAbility}
-                  />
-                  <div className="space-y-2">
+                <LevelAccordion
+                  key={level}
+                  level={level}
+                  title={AWAKENING_NAMES[level]}
+                  isLocked={sword.level < level}
+                  isPending={pendingInfo.pendingCount > 0}
+                  pendingCount={pendingInfo.pendingCount}
+                  defaultOpen={sword.level === level}
+                  themeColor="red"
+                >
+                  <div className="space-y-3">
                     {abilities.map((ability) => {
                       const isSelected = selectedAbility?.id === ability.id;
 
                       return (
-                        <AbilitySelectionCard
+                        <EnhancedAbilityCard
                           key={ability.id}
-                          title={ability.name}
+                          name={ability.name}
                           description={ability.description}
-                          category={ABILITY_TYPE_NAMES[ability.type]}
+                          type={ability.type}
+                          actionType={ability.actionType}
+                          range={ability.range}
+                          duration={ability.duration}
+                          damageType={ability.damageType}
+                          damage={ability.damage}
+                          savingThrow={ability.savingThrow}
+                          condition={ability.condition}
+                          limit={ability.limit}
+                          cost={ability.cost}
+                          isUnlocked={sword.level >= level}
                           isSelected={isSelected}
-                          canSelect={canSelect && !readOnly}
+                          canSelect={sword.level >= level && !readOnly}
                           onClick={() => !readOnly && selectAbility(ability)}
-                          colorClasses={ABILITY_TYPE_COLORS[ability.type]}
+                          themeColor="red"
                         />
                       );
                     })}
                   </div>
-                </div>
+                </LevelAccordion>
               );
             })}
           </div>

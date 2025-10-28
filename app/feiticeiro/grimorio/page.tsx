@@ -16,13 +16,17 @@ import {
 } from '@/types/levelup';
 import ItemHeader from '@/app/components/ItemHeader';
 import WarningBanner from '@/app/components/WarningBanner';
-import SectionHeader from '@/app/components/SectionHeader';
 import ContentBox from '@/app/components/ContentBox';
 import AbilityCard from '@/app/components/AbilityCard';
 import BaseAbilityCard from '@/app/components/BaseAbilityCard';
 import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
-import LevelSectionHeader from '@/app/components/LevelSectionHeader';
+import LevelAccordion from '@/app/components/LevelAccordion';
 import TabNavigation from '@/app/components/TabNavigation';
+import EnhancedAbilityCard from '@/app/components/EnhancedAbilityCard';
+import {
+  getGrimorioPendingItemsForLevel,
+  getTotalGrimorioPendingCount,
+} from '@/app/utils/pendingItems';
 
 export interface GrimorioPageRef {
   getLevelUpRequirement: (level: number) => LevelUpRequirement | null;
@@ -178,22 +182,8 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
     });
   };
 
-  const canSelectAbilityForLevel = (level: 3 | 6 | 9 | 11): boolean => {
-    return grimorio.level >= level;
-  };
-
   const getAbilitiesForLevel = (level: 3 | 6 | 9 | 11): GrimorioAbility[] => {
     return GRIMORIO_ABILITIES.filter((a) => a.awakening === level);
-  };
-
-  // Check for unselected abilities
-  const getUnselectedAbilityLevels = (): number[] => {
-    const unselected: number[] = [];
-    if (grimorio.level >= 3 && !grimorio.selectedAbilities.level3) unselected.push(3);
-    if (grimorio.level >= 6 && !grimorio.selectedAbilities.level6) unselected.push(6);
-    if (grimorio.level >= 9 && !grimorio.selectedAbilities.level9) unselected.push(9);
-    if (grimorio.level >= 11 && !grimorio.selectedAbilities.level11) unselected.push(11);
-    return unselected;
   };
 
   if (!isLoaded) {
@@ -255,10 +245,10 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
         />
 
         {/* Unselected Abilities Warning */}
-        {getUnselectedAbilityLevels().length > 0 && (
+        {getTotalGrimorioPendingCount(grimorio.level, grimorio.selectedAbilities) > 0 && (
           <WarningBanner
             title="Habilidades Pendentes"
-            message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
+            message="Você tem habilidades não selecionadas. Vá para a aba Progressão para completar suas escolhas."
             buttonText="Ir para Progressão"
             onButtonClick={() => setActiveTab('abilities')}
           />
@@ -268,7 +258,7 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
         <TabNavigation
           tabs={[
             { id: 'combat', label: 'Combate', icon: '📖' },
-            { id: 'abilities', label: 'Progressão', icon: '🌾', badge: getUnselectedAbilityLevels().length },
+            { id: 'abilities', label: 'Progressão', icon: '🌾', badge: getTotalGrimorioPendingCount(grimorio.level, grimorio.selectedAbilities) },
           ]}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities')}
@@ -287,16 +277,25 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
               ) : (
                 <div className="space-y-3">
                   {allSelectedAbilities.map((ability) => {
-                    const [borderColor, bgColor] = ABILITY_TYPE_COLORS[ability.type].split(' ');
                     return (
-                      <AbilityCard
+                      <EnhancedAbilityCard
                         key={ability.id}
                         name={ability.name}
                         description={ability.description}
-                        level={ability.awakening}
-                        type={`${ABILITY_TYPE_NAMES[ability.type]}${ability.usage ? ` • ${ability.usage}` : ''}`}
-                        borderColor={borderColor}
-                        bgColor={bgColor}
+                        type={ability.type}
+                        actionType={ability.actionType}
+                        range={ability.range}
+                        duration={ability.duration}
+                        damageType={ability.damageType}
+                        damage={ability.damage}
+                        savingThrow={ability.savingThrow}
+                        condition={ability.condition}
+                        limit={ability.limit}
+                        cost={ability.cost}
+                        isUnlocked={true}
+                        isSelected={false}
+                        canSelect={false}
+                        themeColor="purple"
                       />
                     );
                   })}
@@ -308,85 +307,128 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
 
         {/* Abilities Tab */}
         {activeTab === 'abilities' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Level 1 */}
-            <div>
-              <LevelSectionHeader
-                level={1}
-                title="Despertar Inicial"
-                isLocked={grimorio.level < 1}
-                isPending={false}
-              />
-              <div className="space-y-2">
-                <BaseAbilityCard
-                  level={1}
-                  name="Crescimento Profano"
-                  description="O personagem pode tocar o solo e acelerar o crescimento de plantas naturais — ervas, raízes, grãos, flores ou palha — em um raio de até 3 metros. Pode ser usado para camuflagem, distrações, esconder objetos, criar pequenas barreiras ou manipular o ambiente. Não causa dano, mas mostra que o campo responde à sua vontade."
-                  icon="🌿"
-                  isUnlocked={grimorio.level >= 1}
-                  themeColor="purple"
-                />
-              </div>
-            </div>
+            <LevelAccordion
+              level={1}
+              title="Despertar Inicial"
+              isLocked={grimorio.level < 1}
+              isPending={false}
+              pendingCount={0}
+              defaultOpen={grimorio.level === 1}
+              themeColor="purple"
+            >
+              {(() => {
+                const ability = GRIMORIO_ABILITIES.find(a => a.awakening === 1);
+                return ability ? (
+                  <EnhancedAbilityCard
+                    name={ability.name}
+                    description={ability.description}
+                    type={ability.type}
+                    actionType={ability.actionType}
+                    range={ability.range}
+                    duration={ability.duration}
+                    damageType={ability.damageType}
+                    damage={ability.damage}
+                    savingThrow={ability.savingThrow}
+                    condition={ability.condition}
+                    limit={ability.limit}
+                    cost={ability.cost}
+                    isUnlocked={grimorio.level >= 1}
+                    isSelected={false}
+                    canSelect={false}
+                    themeColor="purple"
+                  />
+                ) : null;
+              })()}
+            </LevelAccordion>
 
             {/* Level 2 */}
-            <div>
-              <LevelSectionHeader
-                level={2}
-                title="Despertar Menor"
-                isLocked={grimorio.level < 2}
-                isPending={false}
-              />
-              <div className="space-y-2">
-                <BaseAbilityCard
-                  level={2}
-                  name="Língua dos Corvos"
-                  description="O personagem pode falar com corvos e espantalhos animados. Eles compreendem ordens simples e podem relatar o que viram nas últimas 24 horas, em linguagem simbólica (&quot;asas sobre o norte&quot;, &quot;algo anda sob o solo&quot;). Isso inclui perguntas sobre desaparecimentos, viajantes ou presenças estranhas na região."
-                  icon="🐦"
-                  isUnlocked={grimorio.level >= 2}
-                  themeColor="purple"
-                />
-              </div>
-            </div>
+            <LevelAccordion
+              level={2}
+              title="Despertar Menor"
+              isLocked={grimorio.level < 2}
+              isPending={false}
+              pendingCount={0}
+              defaultOpen={grimorio.level === 2}
+              themeColor="purple"
+            >
+              {(() => {
+                const ability = GRIMORIO_ABILITIES.find(a => a.awakening === 2);
+                return ability ? (
+                  <EnhancedAbilityCard
+                    name={ability.name}
+                    description={ability.description}
+                    type={ability.type}
+                    actionType={ability.actionType}
+                    range={ability.range}
+                    duration={ability.duration}
+                    damageType={ability.damageType}
+                    damage={ability.damage}
+                    savingThrow={ability.savingThrow}
+                    condition={ability.condition}
+                    limit={ability.limit}
+                    cost={ability.cost}
+                    isUnlocked={grimorio.level >= 2}
+                    isSelected={false}
+                    canSelect={false}
+                    themeColor="purple"
+                  />
+                ) : null;
+              })()}
+            </LevelAccordion>
 
-          {/* Ability Selection */}
-          {[3, 6, 9, 11].map((level) => {
-            const canSelect = canSelectAbilityForLevel(level as 3 | 6 | 9 | 11);
-            const levelKey = `level${level}` as keyof typeof grimorio.selectedAbilities;
-            const selectedAbility = grimorio.selectedAbilities[levelKey];
-            const abilities = getAbilitiesForLevel(level as 3 | 6 | 9 | 11);
+            {/* Ability Selection */}
+            {[3, 6, 9, 11].map((level) => {
+              const levelKey = `level${level}` as keyof typeof grimorio.selectedAbilities;
+              const selectedAbility = grimorio.selectedAbilities[levelKey];
+              const abilities = getAbilitiesForLevel(level as 3 | 6 | 9 | 11);
+              const pendingInfo = getGrimorioPendingItemsForLevel(level, grimorio.level, grimorio.selectedAbilities);
 
-            return (
-              <div key={level}>
-                <LevelSectionHeader
+              return (
+                <LevelAccordion
+                  key={level}
                   level={level}
                   title={AWAKENING_NAMES[level]}
-                  isLocked={!canSelect}
-                  isPending={canSelect && !selectedAbility}
-                />
-                <div className="space-y-2">
-                  {abilities.map((ability) => {
-                    const isSelected = selectedAbility?.id === ability.id;
+                  isLocked={grimorio.level < level}
+                  isPending={pendingInfo.pendingCount > 0}
+                  pendingCount={pendingInfo.pendingCount}
+                  defaultOpen={grimorio.level === level}
+                  themeColor="purple"
+                >
+                  <div className="space-y-3">
+                    {abilities.map((ability) => {
+                      const isSelected = selectedAbility?.id === ability.id;
 
-                    return (
-                      <AbilitySelectionCard
-                        key={ability.id}
-                        title={ability.name}
-                        description={ability.description}
-                        category={`${ABILITY_TYPE_NAMES[ability.type]}${ability.usage ? ` • ${ability.usage}` : ''}`}
-                        isSelected={isSelected}
-                        canSelect={canSelect && !readOnly}
-                        onClick={() => !readOnly && selectAbility(ability)}
-                        colorClasses={ABILITY_TYPE_COLORS[ability.type]}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                      return (
+                        <EnhancedAbilityCard
+                          key={ability.id}
+                          name={ability.name}
+                          description={ability.description}
+                          type={ability.type}
+                          actionType={ability.actionType}
+                          range={ability.range}
+                          duration={ability.duration}
+                          damageType={ability.damageType}
+                          damage={ability.damage}
+                          savingThrow={ability.savingThrow}
+                          condition={ability.condition}
+                          limit={ability.limit}
+                          cost={ability.cost}
+                          isUnlocked={grimorio.level >= level}
+                          isSelected={isSelected}
+                          canSelect={grimorio.level >= level && !readOnly}
+                          onClick={() => !readOnly && selectAbility(ability)}
+                          themeColor="purple"
+                        />
+                      );
+                    })}
+                  </div>
+                </LevelAccordion>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

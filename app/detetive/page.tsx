@@ -136,9 +136,29 @@ export default function DetetivePage({ readOnly = false, initialData }: Detetive
     if (newLevel < 1 || newLevel > 20) return;
 
     const oldLevel = characterLevel;
+    const levelDiff = newLevel - oldLevel;
 
     // Level-up: Collect requirements from all equipment
-    if (newLevel > oldLevel) {
+    if (levelDiff > 0) {
+      // NOVO: Se salto for maior que 1, atualizar diretamente sem modal
+      if (levelDiff > 1) {
+        // Atualizar nível do personagem
+        setCharacterLevel(newLevel);
+
+        // Notificar equipamentos para criar entries vazias (marcadas como pendentes)
+        if (DETETIVE_EQUIPMENTS.find(e => e.id === 'cao' && e.enabled)) {
+          // Para cada nível pulado, criar HP history vazia
+          for (let level = oldLevel + 1; level <= newLevel; level++) {
+            caoPageRef.current?.confirmLevelUp({
+              equipmentId: 'cao',
+              level: level,
+            });
+          }
+        }
+        return;
+      }
+
+      // Salto de +1: comportamento normal com modal
       setPendingLevel(newLevel);
       const requirements: LevelUpRequirement[] = [];
 

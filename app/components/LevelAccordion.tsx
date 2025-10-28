@@ -7,6 +7,7 @@ interface LevelAccordionProps {
   title: string;
   isLocked: boolean;
   isPending: boolean;
+  pendingCount?: number;
   children: React.ReactNode;
   defaultOpen?: boolean;
   themeColor?: 'amber' | 'red' | 'purple';
@@ -17,6 +18,7 @@ export default function LevelAccordion({
   title,
   isLocked,
   isPending,
+  pendingCount = 0,
   children,
   defaultOpen = false,
   themeColor = 'amber'
@@ -67,8 +69,13 @@ export default function LevelAccordion({
           <span className="break-words">Nível {level} – {title}</span>
           {isLocked && <span className="flex-shrink-0">🔒</span>}
           {isPending && !isLocked && (
-            <span className="rounded-full bg-yellow-600 px-2 py-1 text-xs font-bold text-white whitespace-nowrap flex-shrink-0">
+            <span className="rounded-full bg-yellow-600 px-2 py-1 text-xs font-bold text-white whitespace-nowrap flex-shrink-0 flex items-center gap-1">
               PENDENTE
+              {pendingCount > 0 && (
+                <span className="rounded-full bg-yellow-700 px-1.5 py-0.5 text-xs">
+                  {pendingCount}
+                </span>
+              )}
             </span>
           )}
         </h2>

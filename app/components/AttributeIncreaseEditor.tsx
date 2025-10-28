@@ -79,15 +79,16 @@ export default function AttributeIncreaseEditor({
 
   const selectedCount = (firstAttribute ? 1 : 0) + (secondAttribute && secondAttribute !== firstAttribute ? 1 : 0);
   const isLocked = !attributeIncrease;
+  const showLockedStyle = isLocked && !canEdit;
 
   return (
     <div className={`rounded-lg border-2 p-3 sm:p-4 shadow-md ${
-      isLocked
+      showLockedStyle
         ? 'border-neutral-800 bg-neutral-950/50 opacity-50'
         : `${theme.border} ${theme.bg}`
     }`}>
       <h4 className={`mb-3 text-sm sm:text-base font-semibold flex items-center gap-2 ${theme.text}`}>
-        {isLocked && <span className="text-base sm:text-lg">🔒</span>}
+        {showLockedStyle && <span className="text-base sm:text-lg">🔒</span>}
         <span>⬆️ Aumento de Atributo</span>
       </h4>
 

@@ -36,6 +36,8 @@ export default function CharacterHeader({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [tempName, setTempName] = useState(characterName);
   const [tempDescription, setTempDescription] = useState(characterDescription);
+  const [showLevelDownModal, setShowLevelDownModal] = useState(false);
+  const [pendingLevel, setPendingLevel] = useState<number | null>(null);
 
   // Color classes based on theme
   const colors = {
@@ -92,6 +94,30 @@ export default function CharacterHeader({
     setIsEditingDescription(false);
   };
 
+  const handleLevelChange = (newLevel: number) => {
+    if (newLevel < characterLevel) {
+      // Level down - show confirmation modal
+      setPendingLevel(newLevel);
+      setShowLevelDownModal(true);
+    } else {
+      // Level up or same - proceed directly
+      onLevelChange(newLevel);
+    }
+  };
+
+  const confirmLevelDown = () => {
+    if (pendingLevel !== null) {
+      onLevelChange(pendingLevel);
+    }
+    setShowLevelDownModal(false);
+    setPendingLevel(null);
+  };
+
+  const cancelLevelDown = () => {
+    setShowLevelDownModal(false);
+    setPendingLevel(null);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -110,11 +136,6 @@ export default function CharacterHeader({
 
   const removeImage = () => {
     onImageChange(null);
-  };
-
-  const handleLevelChange = (newLevel: number) => {
-    if (newLevel < 1 || newLevel > 20) return;
-    onLevelChange(newLevel);
   };
 
   return (
@@ -290,7 +311,17 @@ export default function CharacterHeader({
                   >
                     -
                   </button>
-                  <span className={`text-2xl font-bold ${theme.levelText}`}>{characterLevel}</span>
+                  <select
+                    value={characterLevel}
+                    onChange={(e) => handleLevelChange(parseInt(e.target.value))}
+                    className={`w-14 h-14 rounded bg-neutral-800 border-2 ${theme.inputBorder} text-center text-2xl font-bold ${theme.levelText} focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer`}
+                  >
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => handleLevelChange(characterLevel + 1)}
                     disabled={characterLevel >= 20}
@@ -306,6 +337,37 @@ export default function CharacterHeader({
           </div>
         </div>
       </div>
+
+      {/* Level Down Confirmation Modal */}
+      {showLevelDownModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-lg border-2 border-red-700/50 bg-neutral-900 p-6 shadow-2xl">
+            <h3 className="mb-4 text-xl font-bold text-red-400">⚠️ Confirmar Redução de Nível</h3>
+            <p className="mb-2 text-neutral-300">
+              Você está prestes a reduzir o nível de <span className="font-bold text-white">{characterLevel}</span> para{' '}
+              <span className="font-bold text-white">{pendingLevel}</span>.
+            </p>
+            <p className="mb-6 text-sm text-red-300">
+              <strong>Atenção:</strong> Todas as progressões, itens e habilidades acima do novo nível serão
+              permanentemente removidos. Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmLevelDown}
+                className="flex-1 rounded bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-600"
+              >
+                Confirmar
+              </button>
+              <button
+                onClick={cancelLevelDown}
+                className="flex-1 rounded bg-neutral-700 px-4 py-2 font-semibold text-white hover:bg-neutral-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

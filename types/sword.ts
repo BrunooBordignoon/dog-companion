@@ -2,8 +2,18 @@ export type SwordAbility = {
   id: string;
   name: string;
   description: string;
-  type: 'passive' | 'active';
+  type: 'passive' | 'active' | 'reaction';
   awakening: 1 | 2 | 3 | 7 | 10;
+  // Detalhes estilo D&D
+  actionType?: 'action' | 'bonus' | 'reaction' | 'free' | 'none';
+  range?: string;
+  duration?: string;
+  damageType?: string;
+  damage?: string;
+  savingThrow?: string;
+  condition?: string;
+  limit?: string;
+  cost?: string;
 };
 
 export type SelectedSwordAbilities = {
@@ -19,87 +29,139 @@ export type SwordData = {
 };
 
 export const SWORD_ABILITIES: SwordAbility[] = [
-  // Nível 1 - Habilidade Base (automática)
-  {
-    id: 'lamina-desperta',
-    name: 'Lâmina Desperta',
-    description: 'A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente.',
-    type: 'passive',
-    awakening: 1,
-  },
-  // Nível 2 - Habilidade Base (automática)
+  // Nível 1 - Eco do Aço (TROCADO COM NÍVEL 2)
   {
     id: 'eco-aco',
     name: 'Eco do Aço',
-    description: 'A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros.',
+    description: 'A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação e Percepção passiva para detectar espíritos. O portador sente uma presença gélida quando há mortos-vivos ou espectros próximos.',
+    type: 'passive',
+    awakening: 1,
+    actionType: 'none',
+    range: '6 metros (detecção)',
+    duration: 'Permanente',
+    condition: 'Empunhando a espada',
+  },
+  // Nível 2 - Lâmina Desperta (TROCADO COM NÍVEL 1)
+  {
+    id: 'lamina-desperta',
+    name: 'Lâmina Desperta',
+    description: 'A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora contam como mágicos e podem atingir criaturas etéreas, espíritos, aparições e mortos-vivos normalmente.',
     type: 'passive',
     awakening: 2,
+    actionType: 'none',
+    duration: 'Permanente',
+    damageType: 'Mágico',
   },
   // Nível 3 - Primeiro Despertar
   {
     id: 'choro-almas',
     name: 'Choro das Almas',
-    description: 'A cada acerto crítico, o inimigo sofre +1d6 de dano necrótico. Se for um espírito ou morto-vivo, o dano adicional é radiante.',
+    description: 'A cada acerto crítico, o inimigo sofre dano necrótico adicional. Se o alvo for um espírito ou morto-vivo, o dano adicional é reduzido mas causa dano radiante.',
     type: 'passive',
     awakening: 3,
+    actionType: 'none',
+    damage: '+1d6 necrótico / +1d4 radiante (mortos-vivos)',
+    damageType: 'Necrótico ou Radiante',
+    condition: 'Acerto crítico',
   },
   {
     id: 'cicatriz-viva',
     name: 'Cicatriz Viva',
-    description: 'Ao matar um inimigo, o usuário recupera 1d4 pontos de vida. Pode ocorrer apenas uma vez por rodada.',
+    description: 'Ao matar uma criatura, a espada absorve parte de sua essência vital, recuperando pontos de vida do usuário.',
     type: 'passive',
     awakening: 3,
+    actionType: 'none',
+    damage: 'Cura 1d4 PV',
+    condition: 'Matar uma criatura',
+    limit: '1 vez por rodada',
   },
   {
     id: 'grito-forja',
     name: 'Grito da Forja',
-    description: '1/descanso curto. Como ação bônus, o usuário desperta os ecos na lâmina, causando +1d8 de dano adicional em todos os ataques com ela até o fim do turno. Após o efeito, sofre 1d4 de dano necrótico.',
+    description: 'O usuário desperta os ecos presos na lâmina, liberando uma explosão de energia que amplifica seus ataques. Após o efeito, a energia sombria remanescente fere o portador.',
     type: 'active',
     awakening: 3,
+    actionType: 'bonus',
+    duration: 'Até o fim do turno',
+    damage: '+1d6 em todos os ataques',
+    damageType: 'Necrótico',
+    cost: '1d4 de dano necrótico (após o efeito)',
+    limit: '1x por descanso curto',
   },
   // Nível 7 - Segundo Despertar
   {
     id: 'ecos-ceifa',
     name: 'Ecos da Ceifa',
-    description: 'Quando atingir uma criatura, uma segunda criatura hostil a até 3 metros sofre 1d4 de dano espiritual (eco do golpe).',
+    description: 'Quando acertar uma criatura com a espada, o eco espiritual do golpe ressoa, atingindo uma segunda criatura hostil próxima. O dano é reduzido, mas ignora resistências físicas.',
     type: 'passive',
     awakening: 7,
+    actionType: 'none',
+    range: '3 metros (da primeira criatura)',
+    damage: '1d4 espiritual',
+    damageType: 'Espiritual (força)',
+    condition: 'Acertar uma criatura',
+    limit: '1 vez por turno',
   },
   {
     id: 'fome-aco',
     name: 'Fome do Aço',
-    description: '1/descanso curto. O usuário sacrifica 5 PV para carregar a lâmina com energia sombria. O próximo ataque que acertar causa +2d8 de dano necrótico.',
+    description: 'O usuário sacrifica sua própria vitalidade para alimentar a lâmina com energia sombria concentrada. O próximo golpe que acertar libera toda essa energia acumulada.',
     type: 'active',
     awakening: 7,
+    actionType: 'bonus',
+    damage: '+2d8 necrótico (próximo ataque)',
+    damageType: 'Necrótico',
+    cost: '5 PV',
+    limit: '1x por descanso curto',
   },
   {
     id: 'luz-chora',
     name: 'Luz que Chora',
-    description: 'Em um acerto crítico, o inimigo deve fazer um teste de Sabedoria (CD 13) ou ficar Amedrontado por 1 turno.',
+    description: 'Quando a lâmina atinge um ponto vital, ela emite um lamento sobrenatural que aterroriza o alvo. Criaturas fracas de espírito podem ficar paralisadas de medo.',
     type: 'passive',
     awakening: 7,
+    actionType: 'none',
+    savingThrow: 'Sabedoria CD 13',
+    condition: 'Acerto crítico',
+    damageType: 'Amedrontado (1 turno)',
   },
   // Nível 10 - Terceiro Despertar
   {
     id: 'eco-imortal',
     name: 'Eco Imortal',
-    description: '1/descanso longo, quando o usuário cair a 0 PV, ele automaticamente volta a 1 PV. Vozes sussurram "ainda não terminou".',
+    description: 'As almas presas na espada se recusam a deixar seu portador morrer. Quando cairia a 0 PV, vozes sussurram "ainda não terminou" e o usuário é imediatamente ressuscitado com 1 PV.',
     type: 'passive',
     awakening: 10,
+    actionType: 'none',
+    damage: 'Cura para 1 PV',
+    condition: 'Cair a 0 PV',
+    limit: '1x por descanso longo',
   },
   {
     id: 'coracao-ferro-frio',
     name: 'Coração de Ferro Frio',
-    description: 'O usuário ganha vantagem em testes contra medo e encanto, e +1 CA enquanto empunhar a espada.',
+    description: 'A consciência sombria da espada protege a mente do usuário contra influências externas, enquanto sua presença física reforça suas defesas. O portador torna-se mais resiliente em combate.',
     type: 'passive',
     awakening: 10,
+    actionType: 'none',
+    duration: 'Permanente',
+    condition: 'Empunhando a espada',
+    savingThrow: 'Vantagem contra medo e encantamento',
+    damageType: '+1 CA',
   },
   {
     id: 'explosao-ceifa',
     name: 'Explosão da Ceifa',
-    description: '1/descanso longo. Como ação, finca a espada no chão, liberando um pulso espiritual. Todas as criaturas hostis em um raio de 6 metros fazem um teste de Constituição (CD 15) ou sofrem 3d8 de dano radiante ou necrótico (à escolha) e ficam derrubadas.',
+    description: 'O usuário finca a espada no chão, liberando um pulso explosivo de energia espiritual. Todas as criaturas hostis próximas são atingidas pela onda de energia sombria ou radiante.',
     type: 'active',
     awakening: 10,
+    actionType: 'action',
+    range: 'Raio de 6 metros',
+    damage: '3d8 radiante ou necrótico (à escolha)',
+    damageType: 'Radiante ou Necrótico',
+    savingThrow: 'Constituição CD 15',
+    condition: 'Criaturas ficam Derrubadas (falha)',
+    limit: '1x por descanso longo',
   },
 ];
 
@@ -114,11 +176,21 @@ export const AWAKENING_NAMES: Record<number, string> = {
 export const ABILITY_TYPE_NAMES: Record<SwordAbility['type'], string> = {
   passive: 'Passiva',
   active: 'Ativa',
+  reaction: 'Reação',
 };
 
 export const ABILITY_TYPE_COLORS: Record<SwordAbility['type'], string> = {
   passive: 'border-amber-700/50 bg-amber-950/20',
   active: 'border-red-700/50 bg-red-950/20',
+  reaction: 'border-blue-700/50 bg-blue-950/20',
+};
+
+export const ACTION_TYPE_NAMES: Record<string, string> = {
+  action: 'Ação',
+  bonus: 'Ação Bônus',
+  reaction: 'Reação',
+  free: 'Ação Livre',
+  none: 'Automática',
 };
 
 export function getAwakeningLevel(level: number): number {
