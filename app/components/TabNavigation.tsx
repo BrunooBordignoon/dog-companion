@@ -11,7 +11,7 @@ interface TabNavigationProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function TabNavigation({
@@ -33,6 +33,14 @@ export default function TabNavigation({
       border: 'border-red-700/50',
       activeBorder: 'border-red-600',
       activeText: 'text-red-100',
+      inactiveText: 'text-neutral-400',
+      hoverText: 'hover:text-neutral-200',
+      badge: 'bg-yellow-600',
+    },
+    purple: {
+      border: 'border-purple-700/50',
+      activeBorder: 'border-purple-600',
+      activeText: 'text-purple-100',
       inactiveText: 'text-neutral-400',
       hoverText: 'hover:text-neutral-200',
       badge: 'bg-yellow-600',

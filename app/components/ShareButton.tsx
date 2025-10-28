@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { generateShareURL } from '@/lib/share-utils';
 
 interface ShareButtonProps {
-  characterType: 'detetive' | 'soldado';
-  themeColor: 'amber' | 'red';
+  characterType: 'detetive' | 'soldado' | 'feiticeiro';
+  themeColor: 'amber' | 'red' | 'purple';
 }
 
 export default function ShareButton({ characterType, themeColor }: ShareButtonProps) {
@@ -27,6 +27,13 @@ export default function ShareButton({ characterType, themeColor }: ShareButtonPr
       modal: 'border-red-700/50',
       title: 'text-red-100',
       copyButton: 'border-red-700 bg-red-900/50 hover:bg-red-900/70 text-red-100',
+      copyButtonSuccess: 'border-green-700 bg-green-900/50 hover:bg-green-900/70 text-green-100',
+    },
+    purple: {
+      button: 'border-purple-700 bg-purple-900/50 text-purple-100 hover:bg-purple-900/70',
+      modal: 'border-purple-700/50',
+      title: 'text-purple-100',
+      copyButton: 'border-purple-700 bg-purple-900/50 hover:bg-purple-900/70 text-purple-100',
       copyButtonSuccess: 'border-green-700 bg-green-900/50 hover:bg-green-900/70 text-green-100',
     },
   };

@@ -12,6 +12,7 @@ import {
 } from '@/types/levelup';
 import { AttributeKey, ATTRIBUTE_NAMES, ATTRIBUTE_ABBR, Ability } from '@/types/companion';
 import { SwordAbility } from '@/types/sword';
+import { GrimorioAbility } from '@/types/grimorio';
 import ContentBox from './ContentBox';
 import AbilitySelectionCard from './AbilitySelectionCard';
 
@@ -19,7 +20,7 @@ interface LevelUpModalProps {
   requirements: LevelUpRequirement[];
   onConfirm: (allData: LevelUpData[]) => void;
   onCancel: () => void;
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function LevelUpModal({
@@ -57,6 +58,14 @@ export default function LevelUpModal({
       btnHover: 'hover:bg-red-700',
       btnDisabled: 'bg-neutral-700',
     },
+    purple: {
+      border: 'border-purple-700/50',
+      bg: 'bg-neutral-900',
+      titleText: 'text-purple-100',
+      btnBg: 'bg-purple-800',
+      btnHover: 'hover:bg-purple-700',
+      btnDisabled: 'bg-neutral-700',
+    },
   };
 
   const theme = colors[themeColor];
@@ -88,7 +97,7 @@ export default function LevelUpModal({
   };
 
   // Update ability selection data
-  const updateAbilitySelection = (equipmentId: string, ability: Ability | SwordAbility, levelKey: string) => {
+  const updateAbilitySelection = (equipmentId: string, ability: Ability | SwordAbility | GrimorioAbility, levelKey: string) => {
     setCollectedData((prev) => ({
       ...prev,
       [equipmentId]: {

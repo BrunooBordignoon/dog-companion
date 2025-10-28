@@ -8,14 +8,14 @@ interface CharacterHeaderProps {
   characterDescription: string;
   characterLevel: number;
   characterImage: string | null;
-  themeColor: 'amber' | 'red';
+  themeColor: 'amber' | 'red' | 'purple';
   defaultIcon: string;
   onNameChange: (name: string) => void;
   onDescriptionChange: (description: string) => void;
   onLevelChange: (level: number) => void;
   onImageChange: (image: string | null) => void;
   readOnly?: boolean;
-  characterType?: 'detetive' | 'soldado';
+  characterType?: 'detetive' | 'soldado' | 'feiticeiro';
 }
 
 export default function CharacterHeader({
@@ -64,6 +64,19 @@ export default function CharacterHeader({
       descBorder: 'border-red-700/30',
       descText: 'text-red-300',
       levelText: 'text-red-100',
+    },
+    purple: {
+      border: 'border-purple-700/40',
+      bgGradient: 'from-purple-950/40',
+      portraitBorder: 'border-purple-700/60',
+      portraitBg: 'from-purple-900/20',
+      iconColor: 'text-purple-700/40',
+      inputBorder: 'border-purple-700/50',
+      nameText: 'text-purple-100',
+      descBg: 'bg-purple-900/20',
+      descBorder: 'border-purple-700/30',
+      descText: 'text-purple-300',
+      levelText: 'text-purple-100',
     },
   };
 

@@ -1,7 +1,7 @@
 import pako from 'pako';
 
 export type CharacterExportData = {
-  characterType: 'detetive' | 'soldado';
+  characterType: 'detetive' | 'soldado' | 'feiticeiro';
   data: Record<string, string>; // todos os valores do localStorage
   exportedAt: string;
   characterName?: string; // Para exibir no banner
@@ -10,7 +10,7 @@ export type CharacterExportData = {
 /**
  * Exporta todos os dados do personagem do localStorage
  */
-export function exportCharacterData(characterType: 'detetive' | 'soldado'): string {
+export function exportCharacterData(characterType: 'detetive' | 'soldado' | 'feiticeiro'): string {
   if (typeof window === 'undefined') {
     throw new Error('exportCharacterData can only be called on client side');
   }
@@ -20,7 +20,7 @@ export function exportCharacterData(characterType: 'detetive' | 'soldado'): stri
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.includes(characterType) || key === 'dogCompanion' || key === 'soldado-sword-data')) {
+    if (key && (key.includes(characterType) || key === 'dogCompanion' || key === 'soldado-sword-data' || key === 'feiticeiro-grimorio-data')) {
       const value = localStorage.getItem(key);
       if (value) {
         data[key] = value;
@@ -29,7 +29,11 @@ export function exportCharacterData(characterType: 'detetive' | 'soldado'): stri
   }
 
   // Tentar extrair o nome do personagem
-  let characterName = characterType === 'detetive' ? 'José' : 'Moyza';
+  let characterName = 'Personagem';
+  if (characterType === 'detetive') characterName = 'José';
+  if (characterType === 'soldado') characterName = 'Moyza';
+  if (characterType === 'feiticeiro') characterName = 'Welliton';
+
   const nameKey = `${characterType}-character-name`;
   if (data[nameKey]) {
     characterName = data[nameKey];
@@ -75,7 +79,7 @@ export function importCharacterData(base64: string): CharacterExportData {
 /**
  * Gera URL de compartilhamento completa
  */
-export function generateShareURL(characterType: 'detetive' | 'soldado'): string {
+export function generateShareURL(characterType: 'detetive' | 'soldado' | 'feiticeiro'): string {
   const base64 = exportCharacterData(characterType);
   const baseURL = typeof window !== 'undefined' ? window.location.origin : '';
   return `${baseURL}/view?data=${encodeURIComponent(base64)}&char=${characterType}`;

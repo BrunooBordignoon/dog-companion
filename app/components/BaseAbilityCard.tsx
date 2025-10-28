@@ -6,7 +6,7 @@ interface BaseAbilityCardProps {
   description: string;
   icon: string;
   isUnlocked: boolean;
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function BaseAbilityCard({
@@ -27,6 +27,11 @@ export default function BaseAbilityCard({
       border: 'border-red-700/50',
       bgGradient: 'from-red-950/20',
       text: 'text-red-200',
+    },
+    purple: {
+      border: 'border-purple-700/50',
+      bgGradient: 'from-purple-950/20',
+      text: 'text-purple-200',
     },
   };
 

@@ -4,7 +4,7 @@ interface ContentBoxProps {
   title?: string;
   icon?: string;
   children: React.ReactNode;
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function ContentBox({ title, icon, children, themeColor = 'amber' }: ContentBoxProps) {
@@ -20,6 +20,12 @@ export default function ContentBox({ title, icon, children, themeColor = 'amber'
       bgGradient: 'from-red-950/20',
       dividerBorder: 'border-red-700/30',
       titleText: 'text-red-100',
+    },
+    purple: {
+      border: 'border-purple-700/50',
+      bgGradient: 'from-purple-950/20',
+      dividerBorder: 'border-purple-700/30',
+      titleText: 'text-purple-100',
     },
   };
 

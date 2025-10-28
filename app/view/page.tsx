@@ -6,6 +6,7 @@ import { importCharacterData, CharacterExportData, formatExportDate } from '@/li
 import ReadOnlyBanner from '@/app/components/ReadOnlyBanner';
 import DetetivePage from '@/app/detetive/page';
 import SoldadoPage from '@/app/soldado/page';
+import FeiticeiroPage from '@/app/feiticeiro/page';
 
 function ViewPageContent() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ function ViewPageContent() {
       return;
     }
 
-    if (charParam !== 'detetive' && charParam !== 'soldado') {
+    if (charParam !== 'detetive' && charParam !== 'soldado' && charParam !== 'feiticeiro') {
       setError('Tipo de personagem inválido');
       return;
     }
@@ -92,6 +93,9 @@ function ViewPageContent() {
       )}
       {characterData.characterType === 'soldado' && (
         <SoldadoPage readOnly initialData={characterData.data} />
+      )}
+      {characterData.characterType === 'feiticeiro' && (
+        <FeiticeiroPage readOnly initialData={characterData.data} />
       )}
     </div>
   );

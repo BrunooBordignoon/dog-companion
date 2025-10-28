@@ -10,7 +10,7 @@ interface ItemHeaderProps {
   itemSubtitle?: string;
   itemAlignment?: string;
   itemDescription?: string;
-  themeColor: 'amber' | 'red';
+  themeColor: 'amber' | 'red' | 'purple';
   icon: React.ReactNode;
   onNameChange?: (name: string) => void;
   allowNameEdit?: boolean;
@@ -71,6 +71,23 @@ export default function ItemHeader({
       btnHover: 'hover:bg-red-700',
       editIconHover: 'hover:text-red-200',
       dividerBorder: 'border-red-700/30',
+    },
+    purple: {
+      border: 'border-purple-700/50',
+      bgGradient: 'from-purple-950/30',
+      iconBorder: 'border-purple-600/50',
+      iconBg: 'bg-purple-900/30',
+      iconColor: 'text-purple-400',
+      typeColor: 'text-purple-600',
+      nameColor: 'text-purple-100',
+      nameHover: 'hover:text-purple-200',
+      subtitleBg: 'bg-neutral-800/50',
+      subtitleText: 'text-purple-300',
+      inputBorder: 'border-purple-700/50',
+      btnBg: 'bg-purple-800',
+      btnHover: 'hover:bg-purple-700',
+      editIconHover: 'hover:text-purple-200',
+      dividerBorder: 'border-purple-700/30',
     },
   };
 

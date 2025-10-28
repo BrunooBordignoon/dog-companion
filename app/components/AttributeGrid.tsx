@@ -14,7 +14,7 @@ interface AttributeGridProps {
     wisdom: Attribute;
     charisma: Attribute;
   };
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function AttributeGrid({ attributes, themeColor = 'amber' }: AttributeGridProps) {
@@ -30,6 +30,12 @@ export default function AttributeGrid({ attributes, themeColor = 'amber' }: Attr
       bgGradient: 'from-red-950/20',
       labelText: 'text-red-600',
       valueText: 'text-red-100',
+    },
+    purple: {
+      border: 'border-purple-700/20',
+      bgGradient: 'from-purple-950/20',
+      labelText: 'text-purple-600',
+      valueText: 'text-purple-100',
     },
   };
 

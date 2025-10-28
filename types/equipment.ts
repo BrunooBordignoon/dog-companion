@@ -119,6 +119,31 @@ export const SOLDADO_EQUIPMENTS: Equipment[] = [
   },
 ];
 
+export const FEITICEIRO_EQUIPMENTS: Equipment[] = [
+  {
+    id: 'grimorio',
+    name: 'Grimório',
+    icon: '📖',
+    color: 'purple',
+    enabled: true,
+    description: 'O Livro da Última Safra',
+  },
+  {
+    id: 'item2',
+    name: 'Item 2',
+    icon: '❓',
+    color: 'blue',
+    enabled: false,
+  },
+  {
+    id: 'item3',
+    name: 'Item 3',
+    icon: '❓',
+    color: 'green',
+    enabled: false,
+  },
+];
+
 // Configuração de nível máximo por equipamento
 export type EquipmentConfig = {
   maxLevel: number;
@@ -127,6 +152,7 @@ export type EquipmentConfig = {
 export const EQUIPMENT_CONFIG: Record<string, EquipmentConfig> = {
   cao: { maxLevel: 11 },
   espada: { maxLevel: 10 },
+  grimorio: { maxLevel: 11 },
   item2: { maxLevel: 15 },
   item3: { maxLevel: 8 },
 };

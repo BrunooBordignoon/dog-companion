@@ -60,12 +60,12 @@ export default function Home() {
       available: true,
     },
     {
-      id: 'personagem3',
-      name: 'Em Breve',
-      icon: '❓',
-      color: 'from-neutral-800/40 to-neutral-900/40',
-      borderColor: 'border-neutral-700/50',
-      available: false,
+      id: 'feiticeiro',
+      name: 'Welliton',
+      icon: '🌾',
+      color: 'from-purple-900/40 to-purple-950/40',
+      borderColor: 'border-purple-700/50',
+      available: true,
     },
     {
       id: 'personagem4',

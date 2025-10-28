@@ -1,5 +1,6 @@
 import { AttributeKey, Ability } from './companion';
 import { SwordAbility } from './sword';
+import { GrimorioAbility } from './grimorio';
 
 // ============================================================================
 // HP Roll Requirement
@@ -36,12 +37,12 @@ export type AttributeIncreaseData = {
 
 export type AbilitySelectionRequirement = {
   count: number; // How many abilities to select (usually 1)
-  options: (Ability | SwordAbility)[]; // Available abilities to choose from
+  options: (Ability | SwordAbility | GrimorioAbility)[]; // Available abilities to choose from
   levelKey: string; // e.g., "level3", "level7"
 };
 
 export type AbilitySelectionData = {
-  selectedAbility: Ability | SwordAbility;
+  selectedAbility: Ability | SwordAbility | GrimorioAbility;
   levelKey: string;
 };
 

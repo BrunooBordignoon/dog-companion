@@ -3,7 +3,7 @@
 interface SectionHeaderProps {
   icon: string;
   title: string;
-  themeColor?: 'amber' | 'red';
+  themeColor?: 'amber' | 'red' | 'purple';
 }
 
 export default function SectionHeader({ icon, title, themeColor = 'amber' }: SectionHeaderProps) {
@@ -15,6 +15,10 @@ export default function SectionHeader({ icon, title, themeColor = 'amber' }: Sec
     red: {
       border: 'border-red-700/30',
       text: 'text-red-100',
+    },
+    purple: {
+      border: 'border-purple-700/30',
+      text: 'text-purple-100',
     },
   };
 
