@@ -615,7 +615,7 @@ const CaoPage = forwardRef<CaoPageRef, {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
 
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
+      <div className="mx-auto max-w-4xl py-6 sm:py-8">
         {/* Header */}
         <ItemHeader
           itemName={companion.name}
@@ -687,46 +687,46 @@ const CaoPage = forwardRef<CaoPageRef, {
         {activeTab === 'combat' && (
           <div className="space-y-6">
             {/* Attacks */}
-            <div>
-              <SectionHeader icon="⚔️" title="Ataques" themeColor="amber" />
+            <ContentBox title="Ataques" icon="⚔️" themeColor="amber">
+              <div className="space-y-3">
+                {/* Base Attack */}
+                <div className="rounded-lg border-2 border-red-700/50 bg-gradient-to-br from-red-950/20 to-neutral-900 p-4 shadow-lg">
+                  <h3 className="mb-2 text-lg font-bold text-red-400">Mordida</h3>
+                  <p className="text-sm text-neutral-300">
+                    <span className="font-semibold">Ataque:</span> +4 para atingir, alcance 1,5m
+                  </p>
+                  <p className="text-sm text-neutral-300">
+                    <span className="font-semibold">Dano:</span> {getDamageForLevel(companion.level)} perfurante
+                  </p>
+                  <p className="mt-2 text-xs text-neutral-400">
+                    Alvo Médio ou menor: teste de FOR (CD 12) ou cai no chão
+                  </p>
+                </div>
 
-              {/* Base Attack */}
-              <div className="mb-3 rounded-lg border-2 border-red-700/50 bg-gradient-to-br from-red-950/20 to-neutral-900 p-4 shadow-lg">
-                <h3 className="mb-2 text-lg font-bold text-red-400">Mordida</h3>
-                <p className="text-sm text-neutral-300">
-                  <span className="font-semibold">Ataque:</span> +4 para atingir, alcance 1,5m
-                </p>
-                <p className="text-sm text-neutral-300">
-                  <span className="font-semibold">Dano:</span> {getDamageForLevel(companion.level)} perfurante
-                </p>
-                <p className="mt-2 text-xs text-neutral-400">
-                  Alvo Médio ou menor: teste de FOR (CD 12) ou cai no chão
-                </p>
+                {/* Extra Attacks from Abilities */}
+                {getExtraAttacks().map((attack, idx) => {
+                  const pathColor = PATH_COLORS[attack.path];
+                  const borderColor =
+                    attack.path === 'presa-firme' ? 'border-red-700/50' :
+                    attack.path === 'escudo-fiel' ? 'border-blue-700/50' :
+                    'border-purple-700/50';
+                  const textColor =
+                    attack.path === 'presa-firme' ? 'text-red-400' :
+                    attack.path === 'escudo-fiel' ? 'text-blue-400' :
+                    'text-purple-400';
+
+                  return (
+                    <div key={idx} className={`rounded-lg border-2 ${borderColor} bg-gradient-to-br from-neutral-900 to-neutral-950 p-4 shadow-lg`}>
+                      <h3 className={`mb-2 text-lg font-bold ${textColor}`}>{attack.name}</h3>
+                      <p className="text-sm text-neutral-300">
+                        <span className="font-semibold">Dano:</span> {attack.damage}
+                      </p>
+                      <p className="mt-1 text-xs text-neutral-400">{attack.description}</p>
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Extra Attacks from Abilities */}
-              {getExtraAttacks().map((attack, idx) => {
-                const pathColor = PATH_COLORS[attack.path];
-                const borderColor =
-                  attack.path === 'presa-firme' ? 'border-red-700/50' :
-                  attack.path === 'escudo-fiel' ? 'border-blue-700/50' :
-                  'border-purple-700/50';
-                const textColor =
-                  attack.path === 'presa-firme' ? 'text-red-400' :
-                  attack.path === 'escudo-fiel' ? 'text-blue-400' :
-                  'text-purple-400';
-
-                return (
-                  <div key={idx} className={`mb-3 rounded-lg border-2 ${borderColor} bg-gradient-to-br from-neutral-900 to-neutral-950 p-4 shadow-lg`}>
-                    <h3 className={`mb-2 text-lg font-bold ${textColor}`}>{attack.name}</h3>
-                    <p className="text-sm text-neutral-300">
-                      <span className="font-semibold">Dano:</span> {attack.damage}
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-400">{attack.description}</p>
-                  </div>
-                );
-              })}
-            </div>
+            </ContentBox>
 
             {/* Active Abilities */}
             <ContentBox title="Habilidades Ativas" icon="📜" themeColor="amber">

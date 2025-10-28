@@ -218,7 +218,7 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-4xl py-8">
         {/* Header */}
         <ItemHeader
           itemName="O Livro da Última Safra"
