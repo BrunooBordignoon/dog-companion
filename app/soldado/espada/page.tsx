@@ -259,7 +259,7 @@ const EspadaPage = forwardRef<EspadaPageRef, {
           <WarningBanner
             title="Habilidades Pendentes"
             message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
-            buttonText="Ir para Despertares"
+            buttonText="Ir para Progressão"
             onButtonClick={() => setActiveTab('abilities')}
           />
         )}
@@ -268,7 +268,7 @@ const EspadaPage = forwardRef<EspadaPageRef, {
         <TabNavigation
           tabs={[
             { id: 'combat', label: 'Combate', icon: '⚔️' },
-            { id: 'abilities', label: 'Despertares', icon: '✨', badge: getUnselectedAbilityLevels().length },
+            { id: 'abilities', label: 'Progressão', icon: '✨', badge: getUnselectedAbilityLevels().length },
           ]}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities')}
@@ -304,7 +304,7 @@ const EspadaPage = forwardRef<EspadaPageRef, {
             <ContentBox title="Habilidades Ativas" themeColor="red">
               {allSelectedAbilities.length === 0 ? (
                 <p className="text-neutral-400">
-                  Nenhuma habilidade selecionada. Selecione habilidades na aba Despertares.
+                  Nenhuma habilidade selecionada. Selecione habilidades na aba Progressão.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -328,27 +328,44 @@ const EspadaPage = forwardRef<EspadaPageRef, {
         {/* Abilities Tab */}
         {activeTab === 'abilities' && (
           <div className="space-y-6">
-            {/* Base Abilities */}
-            <div className="space-y-3">
-              <SectionHeader icon="⚔️" title="Habilidades Base" themeColor="amber" />
-
-              <BaseAbilityCard
+            {/* Level 1 */}
+            <div>
+              <LevelSectionHeader
                 level={1}
-                name="Lâmina Desperta"
-                description="A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente."
-                icon="⚡"
-                isUnlocked={sword.level >= 1}
-                themeColor="amber"
+                title="Despertar Inicial"
+                isLocked={sword.level < 1}
+                isPending={false}
               />
+              <div className="space-y-2">
+                <BaseAbilityCard
+                  level={1}
+                  name="Lâmina Desperta"
+                  description="A espada torna-se consciente, sussurrando em voz quase inaudível. Todos os golpes agora são mágicos e afetam espíritos, aparições e mortos-vivos normalmente."
+                  icon="⚡"
+                  isUnlocked={sword.level >= 1}
+                  themeColor="amber"
+                />
+              </div>
+            </div>
 
-              <BaseAbilityCard
+            {/* Level 2 */}
+            <div>
+              <LevelSectionHeader
                 level={2}
-                name="Eco do Aço"
-                description="A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros."
-                icon="🔊"
-                isUnlocked={sword.level >= 2}
-                themeColor="amber"
+                title="Despertar Menor"
+                isLocked={sword.level < 2}
+                isPending={false}
               />
+              <div className="space-y-2">
+                <BaseAbilityCard
+                  level={2}
+                  name="Eco do Aço"
+                  description="A espada armazena parte da energia das mortes que causou. O usuário recebe +1 em testes de Intimidação enquanto estiver empunhando-a. Além disso, a lâmina brilha levemente diante de presenças espirituais a até 6 metros."
+                  icon="🔊"
+                  isUnlocked={sword.level >= 2}
+                  themeColor="amber"
+                />
+              </div>
             </div>
 
             {/* Ability Selection */}

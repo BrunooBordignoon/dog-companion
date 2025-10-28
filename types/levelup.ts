@@ -1,6 +1,7 @@
 import { AttributeKey, Ability } from './companion';
 import { SwordAbility } from './sword';
 import { GrimorioAbility } from './grimorio';
+import { SkillKey, Skills } from './skills';
 
 // ============================================================================
 // HP Roll Requirement
@@ -47,6 +48,18 @@ export type AbilitySelectionData = {
 };
 
 // ============================================================================
+// Expertise Selection Requirement
+// ============================================================================
+
+export type ExpertiseSelectionRequirement = {
+  skills: Skills; // Current skills to filter proficient ones
+};
+
+export type ExpertiseSelectionData = {
+  selectedSkill: SkillKey;
+};
+
+// ============================================================================
 // Auto Gains (Read-only display)
 // ============================================================================
 
@@ -69,6 +82,7 @@ export type LevelUpRequirement = {
   hpRoll?: HPRollRequirement;
   attributeIncrease?: AttributeIncreaseRequirement;
   abilitySelection?: AbilitySelectionRequirement;
+  expertiseSelection?: ExpertiseSelectionRequirement;
   autoGains?: AutoGain[]; // Things gained automatically (for display only)
 };
 
@@ -84,6 +98,7 @@ export type LevelUpData = {
   hpRoll?: HPRollData;
   attributeIncrease?: AttributeIncreaseData;
   abilitySelection?: AbilitySelectionData;
+  expertiseSelection?: ExpertiseSelectionData;
 };
 
 // ============================================================================
@@ -105,6 +120,9 @@ export function isLevelUpDataComplete(data: LevelUpData, requirement: LevelUpReq
   // Check ability selection if required
   if (requirement.abilitySelection && !data.abilitySelection) return false;
 
+  // Check expertise selection if required
+  if (requirement.expertiseSelection && !data.expertiseSelection) return false;
+
   return true;
 }
 
@@ -121,6 +139,10 @@ export function getMissingFields(data: LevelUpData, requirement: LevelUpRequirem
 
   if (requirement.abilitySelection && !data.abilitySelection) {
     missing.push('Seleção de habilidade');
+  }
+
+  if (requirement.expertiseSelection && !data.expertiseSelection) {
+    missing.push('Seleção de expertise');
   }
 
   return missing;

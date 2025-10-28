@@ -259,7 +259,7 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
           <WarningBanner
             title="Habilidades Pendentes"
             message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
-            buttonText="Selecionar Habilidades"
+            buttonText="Ir para Progressão"
             onButtonClick={() => setActiveTab('abilities')}
           />
         )}
@@ -268,7 +268,7 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
         <TabNavigation
           tabs={[
             { id: 'combat', label: 'Combate', icon: '📖' },
-            { id: 'abilities', label: 'Despertares', icon: '🌾', badge: getUnselectedAbilityLevels().length },
+            { id: 'abilities', label: 'Progressão', icon: '🌾', badge: getUnselectedAbilityLevels().length },
           ]}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities')}
@@ -282,7 +282,7 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
             <ContentBox title="Habilidades Ativas" themeColor="purple">
               {allSelectedAbilities.length === 0 ? (
                 <p className="text-neutral-400">
-                  Nenhuma habilidade selecionada. Selecione habilidades na aba Despertares.
+                  Nenhuma habilidade selecionada. Selecione habilidades na aba Progressão.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -309,28 +309,45 @@ const GrimorioPage = forwardRef<GrimorioPageRef, {
         {/* Abilities Tab */}
         {activeTab === 'abilities' && (
           <div className="space-y-6">
-            {/* Base Abilities */}
-            <div className="space-y-3">
-              <SectionHeader icon="🌱" title="Habilidades Base" themeColor="purple" />
+            {/* Level 1 */}
+            <div>
+              <LevelSectionHeader
+                level={1}
+                title="Despertar Inicial"
+                isLocked={grimorio.level < 1}
+                isPending={false}
+              />
+              <div className="space-y-2">
+                <BaseAbilityCard
+                  level={1}
+                  name="Crescimento Profano"
+                  description="O personagem pode tocar o solo e acelerar o crescimento de plantas naturais — ervas, raízes, grãos, flores ou palha — em um raio de até 3 metros. Pode ser usado para camuflagem, distrações, esconder objetos, criar pequenas barreiras ou manipular o ambiente. Não causa dano, mas mostra que o campo responde à sua vontade."
+                  icon="🌿"
+                  isUnlocked={grimorio.level >= 1}
+                  themeColor="purple"
+                />
+              </div>
+            </div>
 
-            <BaseAbilityCard
-              level={1}
-              name="Crescimento Profano"
-              description="O personagem pode tocar o solo e acelerar o crescimento de plantas naturais — ervas, raízes, grãos, flores ou palha — em um raio de até 3 metros. Pode ser usado para camuflagem, distrações, esconder objetos, criar pequenas barreiras ou manipular o ambiente. Não causa dano, mas mostra que o campo responde à sua vontade."
-              icon="🌿"
-              isUnlocked={grimorio.level >= 1}
-              themeColor="purple"
-            />
-
-            <BaseAbilityCard
-              level={2}
-              name="Língua dos Corvos"
-              description="O personagem pode falar com corvos e espantalhos animados. Eles compreendem ordens simples e podem relatar o que viram nas últimas 24 horas, em linguagem simbólica (&quot;asas sobre o norte&quot;, &quot;algo anda sob o solo&quot;). Isso inclui perguntas sobre desaparecimentos, viajantes ou presenças estranhas na região."
-              icon="🐦"
-              isUnlocked={grimorio.level >= 2}
-              themeColor="purple"
-            />
-          </div>
+            {/* Level 2 */}
+            <div>
+              <LevelSectionHeader
+                level={2}
+                title="Despertar Menor"
+                isLocked={grimorio.level < 2}
+                isPending={false}
+              />
+              <div className="space-y-2">
+                <BaseAbilityCard
+                  level={2}
+                  name="Língua dos Corvos"
+                  description="O personagem pode falar com corvos e espantalhos animados. Eles compreendem ordens simples e podem relatar o que viram nas últimas 24 horas, em linguagem simbólica (&quot;asas sobre o norte&quot;, &quot;algo anda sob o solo&quot;). Isso inclui perguntas sobre desaparecimentos, viajantes ou presenças estranhas na região."
+                  icon="🐦"
+                  isUnlocked={grimorio.level >= 2}
+                  themeColor="purple"
+                />
+              </div>
+            </div>
 
           {/* Ability Selection */}
           {[3, 6, 9, 11].map((level) => {

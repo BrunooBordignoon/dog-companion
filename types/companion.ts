@@ -54,6 +54,8 @@ export type CompanionData = {
   selectedAbilities: SelectedAbilities;
   hpHistory: HPHistoryEntry[]; // HP gains per level
   attributeIncreases: AttributeIncrease[]; // Attribute increases per level
+  skills: import('./skills').Skills; // Skills with proficiency/expertise
+  expertiseSkill?: import('./skills').SkillKey; // Skill com expertise (nível 6)
 };
 
 export const ABILITIES: Ability[] = [

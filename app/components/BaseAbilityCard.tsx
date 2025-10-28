@@ -48,7 +48,7 @@ export default function BaseAbilityCard({
       <h3 className={`flex items-center gap-2 font-bold ${theme.text} text-sm sm:text-base flex-wrap`}>
         {!isUnlocked && <span className="text-base sm:text-lg flex-shrink-0">🔒</span>}
         <span className="flex-shrink-0">{icon}</span>
-        <span className="break-words">Nível {level} – {name}</span>
+        <span className="break-words">{name}</span>
       </h3>
       <p className="mt-2 text-sm text-neutral-300">{description}</p>
     </div>

@@ -7,14 +7,17 @@ import {
   HPRollData,
   AttributeIncreaseData,
   AbilitySelectionData,
+  ExpertiseSelectionData,
   validateHPRoll,
   getMissingFields,
 } from '@/types/levelup';
 import { AttributeKey, ATTRIBUTE_NAMES, ATTRIBUTE_ABBR, Ability } from '@/types/companion';
 import { SwordAbility } from '@/types/sword';
 import { GrimorioAbility } from '@/types/grimorio';
+import { SkillKey } from '@/types/skills';
 import ContentBox from './ContentBox';
 import AbilitySelectionCard from './AbilitySelectionCard';
+import ExpertiseSelector from './ExpertiseSelector';
 
 interface LevelUpModalProps {
   requirements: LevelUpRequirement[];
@@ -110,6 +113,19 @@ export default function LevelUpModal({
     }));
   };
 
+  // Update expertise selection data
+  const updateExpertiseSelection = (equipmentId: string, skill: SkillKey) => {
+    setCollectedData((prev) => ({
+      ...prev,
+      [equipmentId]: {
+        ...prev[equipmentId],
+        expertiseSelection: {
+          selectedSkill: skill,
+        },
+      },
+    }));
+  };
+
   // Check if all required data is collected
   const isFormValid = (): boolean => {
     return requirements.every((req) => {
@@ -118,6 +134,7 @@ export default function LevelUpModal({
       if (req.hpRoll && !data.hpRoll) return false;
       if (req.attributeIncrease && !data.attributeIncrease) return false;
       if (req.abilitySelection && !data.abilitySelection) return false;
+      if (req.expertiseSelection && !data.expertiseSelection) return false;
 
       return true;
     });
@@ -318,6 +335,22 @@ export default function LevelUpModal({
                         );
                       })}
                     </div>
+                  </div>
+                )}
+
+                {/* Expertise Selection Section */}
+                {req.expertiseSelection && (
+                  <div className="mb-4 rounded-lg border border-amber-700/50 bg-neutral-950 p-3 sm:p-4">
+                    <h4 className="mb-2 text-sm sm:text-base font-semibold text-amber-200">
+                      ⭐⭐ Expertise
+                    </h4>
+                    <ExpertiseSelector
+                      skills={req.expertiseSelection.skills}
+                      selectedExpertise={data.expertiseSelection?.selectedSkill}
+                      onSelect={(skill) => updateExpertiseSelection(req.equipmentId, skill)}
+                      canSelect={true}
+                      themeColor={themeColor}
+                    />
                   </div>
                 )}
 

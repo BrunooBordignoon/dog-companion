@@ -17,6 +17,7 @@ import {
   ATTRIBUTE_ABBR,
   PathType,
 } from '@/types/companion';
+import { getDogInitialSkills, getProficiencyBonus, SkillKey } from '@/types/skills';
 import ItemHeader from '@/app/components/ItemHeader';
 import StatCard from '@/app/components/StatCard';
 import AttributeGrid from '@/app/components/AttributeGrid';
@@ -29,6 +30,11 @@ import AbilitySelectionCard from '@/app/components/AbilitySelectionCard';
 import LevelSectionHeader from '@/app/components/LevelSectionHeader';
 import PathInfoCard from '@/app/components/PathInfoCard';
 import TabNavigation from '@/app/components/TabNavigation';
+import SkillsTable from '@/app/components/SkillsTable';
+import ExpertiseSelector from '@/app/components/ExpertiseSelector';
+import HPRollEditor from '@/app/components/HPRollEditor';
+import AttributeIncreaseEditor from '@/app/components/AttributeIncreaseEditor';
+import LevelAccordion from '@/app/components/LevelAccordion';
 
 import {
   LevelUpRequirement,
@@ -47,7 +53,7 @@ const CaoPage = forwardRef<CaoPageRef, {
   initialData?: Record<string, string>;
 }>(function CaoPage({ level, onLevelChange, readOnly = false, initialData }, ref) {
 
-  const [activeTab, setActiveTab] = useState<'combat' | 'abilities' | 'hp'>('combat');
+  const [activeTab, setActiveTab] = useState<'combat' | 'abilities' | 'hp' | 'skills'>('combat');
   const [isLoaded, setIsLoaded] = useState(false);
 
   const getInitialCompanionData = (): CompanionData => ({
@@ -68,6 +74,7 @@ const CaoPage = forwardRef<CaoPageRef, {
     selectedAbilities: {},
     hpHistory: getInitialHPHistory(1),
     attributeIncreases: [],
+    skills: getDogInitialSkills(),
   });
 
   const [companion, setCompanion] = useState<CompanionData>(getInitialCompanionData());
@@ -80,6 +87,18 @@ const CaoPage = forwardRef<CaoPageRef, {
       if (saved) {
         try {
           const data = JSON.parse(saved);
+          // Migração: adicionar skills se não existir
+          if (!data.skills) {
+            data.skills = getDogInitialSkills();
+          } else {
+            // Migração: adicionar advantage nas skills de investigação e percepção se não existir
+            if (!data.skills.investigation?.advantage) {
+              data.skills.investigation = { proficient: true, expertise: false, advantage: true };
+            }
+            if (!data.skills.perception?.advantage) {
+              data.skills.perception = { proficient: true, expertise: false, advantage: true };
+            }
+          }
           setCompanion(data);
         } catch (e) {
           console.error('Failed to load saved data:', e);
@@ -94,6 +113,18 @@ const CaoPage = forwardRef<CaoPageRef, {
     if (saved) {
       try {
         const data = JSON.parse(saved);
+        // Migração: adicionar skills se não existir
+        if (!data.skills) {
+          data.skills = getDogInitialSkills();
+        } else {
+          // Migração: adicionar advantage nas skills de investigação e percepção se não existir
+          if (!data.skills.investigation?.advantage) {
+            data.skills.investigation = { proficient: true, expertise: false, advantage: true };
+          }
+          if (!data.skills.perception?.advantage) {
+            data.skills.perception = { proficient: true, expertise: false, advantage: true };
+          }
+        }
         setCompanion(data);
       } catch (e) {
         console.error('Failed to load saved data:', e);
@@ -116,9 +147,10 @@ const CaoPage = forwardRef<CaoPageRef, {
 
     // Check if this level requires any input
     const isAbilityLevel = [3, 5, 7, 10].includes(targetLevel);
+    const isExpertiseLevel = targetLevel === 6;
     const requiresHP = targetLevel > 1; // All level-ups require HP roll
 
-    if (!requiresHP && !isAbilityLevel) return null;
+    if (!requiresHP && !isAbilityLevel && !isExpertiseLevel) return null;
 
     const requirement: LevelUpRequirement = {
       equipmentId: 'cao',
@@ -154,6 +186,13 @@ const CaoPage = forwardRef<CaoPageRef, {
           levelKey,
         };
       }
+    }
+
+    // Expertise Selection requirement (level 6)
+    if (isExpertiseLevel) {
+      requirement.expertiseSelection = {
+        skills: companion.skills,
+      };
     }
 
     return requirement;
@@ -203,6 +242,30 @@ const CaoPage = forwardRef<CaoPageRef, {
       };
     }
 
+    // Process expertise selection
+    let newSkills = { ...companion.skills };
+    let newExpertiseSkill = companion.expertiseSkill;
+
+    if (data.expertiseSelection) {
+      const skillKey = data.expertiseSelection.selectedSkill;
+
+      // Remove expertise from previous skill
+      if (companion.expertiseSkill) {
+        newSkills[companion.expertiseSkill] = {
+          ...newSkills[companion.expertiseSkill],
+          expertise: false,
+        };
+      }
+
+      // Add expertise to new skill
+      newSkills[skillKey] = {
+        ...newSkills[skillKey],
+        expertise: true,
+      };
+
+      newExpertiseSkill = skillKey;
+    }
+
     // Process HP roll
     if (data.hpRoll) {
       const newEntry: HPHistoryEntry = {
@@ -224,6 +287,8 @@ const CaoPage = forwardRef<CaoPageRef, {
         hp: companion.hp + data.hpRoll.total,
         attributeIncreases: newAttributeIncreases,
         selectedAbilities: newSelectedAbilities,
+        skills: newSkills,
+        expertiseSkill: newExpertiseSkill,
       });
     } else {
       // No HP roll (shouldn't happen for Cão, but handle it)
@@ -233,6 +298,8 @@ const CaoPage = forwardRef<CaoPageRef, {
         attributes: newAttributes,
         attributeIncreases: newAttributeIncreases,
         selectedAbilities: newSelectedAbilities,
+        skills: newSkills,
+        expertiseSkill: newExpertiseSkill,
       });
     }
   };
@@ -252,6 +319,19 @@ const CaoPage = forwardRef<CaoPageRef, {
     if (newLevel < 5) delete newSelectedAbilities.level5;
     if (newLevel < 7) delete newSelectedAbilities.level7;
     if (newLevel < 10) delete newSelectedAbilities.level10;
+
+    // Remove expertise if below level 6
+    let newExpertiseSkill = companion.expertiseSkill;
+    const newSkills = { ...companion.skills };
+
+    if (newLevel < 6 && companion.expertiseSkill) {
+      // Remove expertise from the skill
+      newSkills[companion.expertiseSkill] = {
+        ...newSkills[companion.expertiseSkill],
+        expertise: false,
+      };
+      newExpertiseSkill = undefined;
+    }
 
     // Recalculate attributes from scratch
     const baseAttributes = {
@@ -279,6 +359,8 @@ const CaoPage = forwardRef<CaoPageRef, {
       hpHistory: newHistory,
       attributeIncreases: newAttributeIncreases,
       selectedAbilities: newSelectedAbilities,
+      skills: newSkills,
+      expertiseSkill: newExpertiseSkill,
       maxHp: newMaxHp,
       hp: Math.min(companion.hp, newMaxHp),
     });
@@ -328,11 +410,131 @@ const CaoPage = forwardRef<CaoPageRef, {
     setCompanion({ ...companion, name: newName });
   };
 
+  const selectExpertise = (skillKey: SkillKey) => {
+    // Remover expertise da skill anterior (se houver)
+    const updatedSkills = { ...companion.skills };
+
+    if (companion.expertiseSkill) {
+      updatedSkills[companion.expertiseSkill] = {
+        ...updatedSkills[companion.expertiseSkill],
+        expertise: false,
+      };
+    }
+
+    // Adicionar expertise na nova skill
+    updatedSkills[skillKey] = {
+      ...updatedSkills[skillKey],
+      expertise: true,
+    };
+
+    setCompanion({
+      ...companion,
+      expertiseSkill: skillKey,
+      skills: updatedSkills,
+    });
+  };
+
+  const updateHPRoll = (level: number, newRoll: number) => {
+    const hpEntry = companion.hpHistory.find((entry) => entry.level === level);
+    if (!hpEntry) return;
+
+    const updatedHistory = companion.hpHistory.map((entry) => {
+      if (entry.level === level) {
+        return {
+          ...entry,
+          roll: newRoll,
+          total: newRoll + entry.modifier,
+        };
+      }
+      return entry;
+    });
+
+    const newMaxHp = calculateMaxHP(updatedHistory);
+
+    setCompanion({
+      ...companion,
+      hpHistory: updatedHistory,
+      maxHp: newMaxHp,
+      hp: Math.min(companion.hp, newMaxHp),
+    });
+  };
+
+  const updateAttributeIncrease = (level: number, attributes: [AttributeKey, AttributeKey]) => {
+    const existingIncrease = companion.attributeIncreases.find((inc) => inc.level === level);
+
+    // Calculate the difference to apply/remove
+    const oldAttributes = existingIncrease?.attributes || [undefined, undefined];
+    const newAttributes = { ...companion.attributes };
+
+    // Remove old increases
+    if (oldAttributes[0]) {
+      newAttributes[oldAttributes[0]] = {
+        value: newAttributes[oldAttributes[0]].value - 1,
+        modifier: calculateModifier(newAttributes[oldAttributes[0]].value - 1),
+      };
+    }
+    if (oldAttributes[1] && oldAttributes[1] !== oldAttributes[0]) {
+      newAttributes[oldAttributes[1]] = {
+        value: newAttributes[oldAttributes[1]].value - 1,
+        modifier: calculateModifier(newAttributes[oldAttributes[1]].value - 1),
+      };
+    } else if (oldAttributes[1] && oldAttributes[1] === oldAttributes[0]) {
+      newAttributes[oldAttributes[0]] = {
+        value: newAttributes[oldAttributes[0]].value - 1,
+        modifier: calculateModifier(newAttributes[oldAttributes[0]].value - 1),
+      };
+    }
+
+    // Apply new increases
+    newAttributes[attributes[0]] = {
+      value: newAttributes[attributes[0]].value + 1,
+      modifier: calculateModifier(newAttributes[attributes[0]].value + 1),
+    };
+
+    if (attributes[1] !== attributes[0]) {
+      newAttributes[attributes[1]] = {
+        value: newAttributes[attributes[1]].value + 1,
+        modifier: calculateModifier(newAttributes[attributes[1]].value + 1),
+      };
+    } else {
+      newAttributes[attributes[0]] = {
+        value: newAttributes[attributes[0]].value + 1,
+        modifier: calculateModifier(newAttributes[attributes[0]].value + 1),
+      };
+    }
+
+    // Update or add the attribute increase
+    const updatedIncreases = existingIncrease
+      ? companion.attributeIncreases.map((inc) =>
+          inc.level === level ? { level, attributes } : inc
+        )
+      : [...companion.attributeIncreases, { level, attributes }];
+
+    // Recalculate HP with new CON modifier
+    const conModifier = newAttributes.constitution.modifier;
+    const updatedHistory = companion.hpHistory.map((entry) => ({
+      ...entry,
+      modifier: conModifier,
+      total: entry.roll + conModifier,
+    }));
+    const newMaxHp = calculateMaxHP(updatedHistory);
+
+    setCompanion({
+      ...companion,
+      attributes: newAttributes,
+      attributeIncreases: updatedIncreases,
+      hpHistory: updatedHistory,
+      maxHp: newMaxHp,
+      hp: Math.min(companion.hp, newMaxHp),
+    });
+  };
+
   // Check for unselected abilities
   const getUnselectedAbilityLevels = (): number[] => {
     const unselected: number[] = [];
     if (companion.level >= 3 && !companion.selectedAbilities.level3) unselected.push(3);
     if (companion.level >= 5 && !companion.selectedAbilities.level5) unselected.push(5);
+    if (companion.level >= 6 && !companion.expertiseSkill) unselected.push(6);
     if (companion.level >= 7 && !companion.selectedAbilities.level7) unselected.push(7);
     if (companion.level >= 10 && !companion.selectedAbilities.level10) unselected.push(10);
     return unselected;
@@ -406,7 +608,7 @@ const CaoPage = forwardRef<CaoPageRef, {
         />
 
         {/* Stats Grid */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard
             label="PV"
             value={`${companion.hp}/${companion.maxHp}`}
@@ -418,6 +620,7 @@ const CaoPage = forwardRef<CaoPageRef, {
           />
           <StatCard label="CA" value={companion.ac} color="blue" />
           <StatCard label="Deslocamento" value={`${companion.speed}m`} color="green" />
+          <StatCard label="PROFICIÊNCIA" value={`+${getProficiencyBonus(companion.level)}`} color="amber" />
         </div>
 
         {/* Attributes */}
@@ -428,7 +631,7 @@ const CaoPage = forwardRef<CaoPageRef, {
           <WarningBanner
             title="Habilidades Pendentes"
             message={`Você tem habilidades não selecionadas para os níveis: ${getUnselectedAbilityLevels().join(', ')}`}
-            buttonText="Ir para Habilidades"
+            buttonText="Ir para Progressão"
             onButtonClick={() => setActiveTab('abilities')}
           />
         )}
@@ -437,11 +640,12 @@ const CaoPage = forwardRef<CaoPageRef, {
         <TabNavigation
           tabs={[
             { id: 'combat', label: 'Combate', icon: '⚔️' },
-            { id: 'abilities', label: 'Habilidades', icon: '🧭', badge: getUnselectedAbilityLevels().length },
+            { id: 'abilities', label: 'Progressão', icon: '🧭', badge: getUnselectedAbilityLevels().length },
+            { id: 'skills', label: 'Perícias', icon: '🎓' },
             { id: 'hp', label: 'Pontos de Vida', icon: '❤️' },
           ]}
           activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities' | 'hp')}
+          onTabChange={(tabId) => setActiveTab(tabId as 'combat' | 'abilities' | 'hp' | 'skills')}
           themeColor="amber"
         />
 
@@ -539,7 +743,7 @@ const CaoPage = forwardRef<CaoPageRef, {
 
         {/* Abilities Tab */}
         {activeTab === 'abilities' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Path Overview */}
             <ContentBox title="Caminhos de Evolução" icon="🛤️" themeColor="amber">
               <div className="grid gap-3 sm:grid-cols-3">
@@ -573,10 +777,15 @@ const CaoPage = forwardRef<CaoPageRef, {
               </p>
             </ContentBox>
 
-            {/* Base Abilities */}
-            <div className="space-y-3">
-              <SectionHeader icon="🧭" title="Habilidades de Classe" themeColor="amber" />
-
+            {/* Level 1 */}
+            <LevelAccordion
+              level={1}
+              title="Habilidade de Classe"
+              isLocked={companion.level < 1}
+              isPending={false}
+              defaultOpen={companion.level === 1}
+              themeColor="amber"
+            >
               <BaseAbilityCard
                 level={1}
                 name="Cão Investigador"
@@ -585,7 +794,34 @@ const CaoPage = forwardRef<CaoPageRef, {
                 isUnlocked={companion.level >= 1}
                 themeColor="amber"
               />
+              <BaseAbilityCard
+                level={1}
+                name="Proficiências"
+                description="O cão é proficiente em Investigação e Percepção."
+                icon="🎓"
+                isUnlocked={companion.level >= 1}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={1}
+                hpEntry={companion.hpHistory.find(e => e.level === 1)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(1, roll)}
+                canEdit={false}
+                themeColor="amber"
+              />
+            </LevelAccordion>
 
+            {/* Level 2 */}
+            <LevelAccordion
+              level={2}
+              title="Habilidade de Classe"
+              isLocked={companion.level < 2}
+              isPending={false}
+              defaultOpen={companion.level === 2}
+              themeColor="amber"
+            >
               <BaseAbilityCard
                 level={2}
                 name="Laço Inquebrável"
@@ -594,44 +830,305 @@ const CaoPage = forwardRef<CaoPageRef, {
                 isUnlocked={companion.level >= 2}
                 themeColor="amber"
               />
-            </div>
+              <HPRollEditor
+                level={2}
+                hpEntry={companion.hpHistory.find(e => e.level === 2)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(2, roll)}
+                canEdit={companion.level >= 2 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
 
-            {/* Ability Selection */}
-            {[3, 5, 7, 10].map((level) => {
-              const canSelect = canSelectAbilityForLevel(level as 3 | 5 | 7 | 10);
-              const levelKey = `level${level}` as keyof typeof companion.selectedAbilities;
-              const selectedAbility = companion.selectedAbilities[levelKey];
-              const abilities = getAbilitiesForLevel(level as 3 | 5 | 7 | 10);
-
-              return (
-                <div key={level}>
-                  <LevelSectionHeader
-                    level={level}
-                    title="Escolha de Caminho"
-                    isLocked={!canSelect}
-                    isPending={canSelect && !selectedAbility}
+            {/* Level 3 - Path Selection & Attribute Increase */}
+            <LevelAccordion
+              level={3}
+              title="Escolha de Caminho"
+              isLocked={companion.level < 3}
+              isPending={companion.level >= 3 && (!companion.selectedAbilities.level3 || !companion.attributeIncreases.find(a => a.level === 3))}
+              defaultOpen={companion.level === 3}
+              themeColor="amber"
+            >
+              {getAbilitiesForLevel(3).map((ability) => {
+                const isSelected = companion.selectedAbilities.level3?.id === ability.id;
+                const pathColor = PATH_COLORS[ability.path];
+                return (
+                  <AbilitySelectionCard
+                    key={ability.id}
+                    title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                    description={ability.description}
+                    isSelected={isSelected}
+                    canSelect={companion.level >= 3 && !readOnly}
+                    onClick={() => !readOnly && selectAbility(ability)}
+                    colorClasses={pathColor}
                   />
-                  <div className="space-y-2">
-                    {abilities.map((ability) => {
-                      const isSelected = selectedAbility?.id === ability.id;
-                      const pathColor = PATH_COLORS[ability.path];
+                );
+              })}
+              <AttributeIncreaseEditor
+                level={3}
+                attributeIncrease={companion.attributeIncreases.find(a => a.level === 3)}
+                onUpdate={(attrs) => updateAttributeIncrease(3, attrs)}
+                canEdit={companion.level >= 3 && !readOnly}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={3}
+                hpEntry={companion.hpHistory.find(e => e.level === 3)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(3, roll)}
+                canEdit={companion.level >= 3 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
 
-                      return (
-                        <AbilitySelectionCard
-                          key={ability.id}
-                          title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
-                          description={ability.description}
-                          isSelected={isSelected}
-                          canSelect={canSelect && !readOnly}
-                          onClick={() => !readOnly && selectAbility(ability)}
-                          colorClasses={pathColor}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+            {/* Level 4 */}
+            <LevelAccordion
+              level={4}
+              title="Progressão de Nível"
+              isLocked={companion.level < 4}
+              isPending={false}
+              defaultOpen={companion.level === 4}
+              themeColor="amber"
+            >
+              <HPRollEditor
+                level={4}
+                hpEntry={companion.hpHistory.find(e => e.level === 4)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(4, roll)}
+                canEdit={companion.level >= 4 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 5 - Path Selection & Attribute Increase */}
+            <LevelAccordion
+              level={5}
+              title="Escolha de Caminho"
+              isLocked={companion.level < 5}
+              isPending={companion.level >= 5 && (!companion.selectedAbilities.level5 || !companion.attributeIncreases.find(a => a.level === 5))}
+              defaultOpen={companion.level === 5}
+              themeColor="amber"
+            >
+              {getAbilitiesForLevel(5).map((ability) => {
+                const isSelected = companion.selectedAbilities.level5?.id === ability.id;
+                const pathColor = PATH_COLORS[ability.path];
+                return (
+                  <AbilitySelectionCard
+                    key={ability.id}
+                    title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                    description={ability.description}
+                    isSelected={isSelected}
+                    canSelect={companion.level >= 5 && !readOnly}
+                    onClick={() => !readOnly && selectAbility(ability)}
+                    colorClasses={pathColor}
+                  />
+                );
+              })}
+              <AttributeIncreaseEditor
+                level={5}
+                attributeIncrease={companion.attributeIncreases.find(a => a.level === 5)}
+                onUpdate={(attrs) => updateAttributeIncrease(5, attrs)}
+                canEdit={companion.level >= 5 && !readOnly}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={5}
+                hpEntry={companion.hpHistory.find(e => e.level === 5)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(5, roll)}
+                canEdit={companion.level >= 5 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 6 - Expertise */}
+            <LevelAccordion
+              level={6}
+              title="Expertise"
+              isLocked={companion.level < 6}
+              isPending={companion.level >= 6 && !companion.expertiseSkill}
+              defaultOpen={companion.level === 6}
+              themeColor="amber"
+            >
+              <ExpertiseSelector
+                skills={companion.skills}
+                selectedExpertise={companion.expertiseSkill}
+                onSelect={selectExpertise}
+                canSelect={companion.level >= 6 && !readOnly}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={6}
+                hpEntry={companion.hpHistory.find(e => e.level === 6)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(6, roll)}
+                canEdit={companion.level >= 6 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 7 - Path Selection & Attribute Increase */}
+            <LevelAccordion
+              level={7}
+              title="Escolha de Caminho"
+              isLocked={companion.level < 7}
+              isPending={companion.level >= 7 && (!companion.selectedAbilities.level7 || !companion.attributeIncreases.find(a => a.level === 7))}
+              defaultOpen={companion.level === 7}
+              themeColor="amber"
+            >
+              {getAbilitiesForLevel(7).map((ability) => {
+                const isSelected = companion.selectedAbilities.level7?.id === ability.id;
+                const pathColor = PATH_COLORS[ability.path];
+                return (
+                  <AbilitySelectionCard
+                    key={ability.id}
+                    title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                    description={ability.description}
+                    isSelected={isSelected}
+                    canSelect={companion.level >= 7 && !readOnly}
+                    onClick={() => !readOnly && selectAbility(ability)}
+                    colorClasses={pathColor}
+                  />
+                );
+              })}
+              <AttributeIncreaseEditor
+                level={7}
+                attributeIncrease={companion.attributeIncreases.find(a => a.level === 7)}
+                onUpdate={(attrs) => updateAttributeIncrease(7, attrs)}
+                canEdit={companion.level >= 7 && !readOnly}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={7}
+                hpEntry={companion.hpHistory.find(e => e.level === 7)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(7, roll)}
+                canEdit={companion.level >= 7 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 8 */}
+            <LevelAccordion
+              level={8}
+              title="Progressão de Nível"
+              isLocked={companion.level < 8}
+              isPending={false}
+              defaultOpen={companion.level === 8}
+              themeColor="amber"
+            >
+              <HPRollEditor
+                level={8}
+                hpEntry={companion.hpHistory.find(e => e.level === 8)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(8, roll)}
+                canEdit={companion.level >= 8 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 9 */}
+            <LevelAccordion
+              level={9}
+              title="Progressão de Nível"
+              isLocked={companion.level < 9}
+              isPending={false}
+              defaultOpen={companion.level === 9}
+              themeColor="amber"
+            >
+              <HPRollEditor
+                level={9}
+                hpEntry={companion.hpHistory.find(e => e.level === 9)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(9, roll)}
+                canEdit={companion.level >= 9 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 10 - Path Selection & Attribute Increase */}
+            <LevelAccordion
+              level={10}
+              title="Escolha de Caminho"
+              isLocked={companion.level < 10}
+              isPending={companion.level >= 10 && (!companion.selectedAbilities.level10 || !companion.attributeIncreases.find(a => a.level === 10))}
+              defaultOpen={companion.level === 10}
+              themeColor="amber"
+            >
+              {getAbilitiesForLevel(10).map((ability) => {
+                const isSelected = companion.selectedAbilities.level10?.id === ability.id;
+                const pathColor = PATH_COLORS[ability.path];
+                return (
+                  <AbilitySelectionCard
+                    key={ability.id}
+                    title={`${PATH_NAMES[ability.path]} – ${ability.name}`}
+                    description={ability.description}
+                    isSelected={isSelected}
+                    canSelect={companion.level >= 10 && !readOnly}
+                    onClick={() => !readOnly && selectAbility(ability)}
+                    colorClasses={pathColor}
+                  />
+                );
+              })}
+              <AttributeIncreaseEditor
+                level={10}
+                attributeIncrease={companion.attributeIncreases.find(a => a.level === 10)}
+                onUpdate={(attrs) => updateAttributeIncrease(10, attrs)}
+                canEdit={companion.level >= 10 && !readOnly}
+                themeColor="amber"
+              />
+              <HPRollEditor
+                level={10}
+                hpEntry={companion.hpHistory.find(e => e.level === 10)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(10, roll)}
+                canEdit={companion.level >= 10 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+
+            {/* Level 11 */}
+            <LevelAccordion
+              level={11}
+              title="Progressão de Nível"
+              isLocked={companion.level < 11}
+              isPending={false}
+              defaultOpen={companion.level === 11}
+              themeColor="amber"
+            >
+              <HPRollEditor
+                level={11}
+                hpEntry={companion.hpHistory.find(e => e.level === 11)}
+                maxDice={6}
+                conModifier={companion.attributes.constitution.modifier}
+                onUpdate={(roll) => updateHPRoll(11, roll)}
+                canEdit={companion.level >= 11 && !readOnly}
+                themeColor="amber"
+              />
+            </LevelAccordion>
+          </div>
+        )}
+
+        {/* Skills Tab */}
+        {activeTab === 'skills' && (
+          <div className="space-y-6">
+            <ContentBox title="Perícias do Companheiro" icon="🎓" themeColor="amber">
+              <SkillsTable
+                attributes={companion.attributes}
+                skills={companion.skills}
+                proficiencyBonus={getProficiencyBonus(companion.level)}
+                themeColor="amber"
+              />
+            </ContentBox>
           </div>
         )}
 
