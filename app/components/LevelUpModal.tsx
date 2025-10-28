@@ -315,19 +315,8 @@ export default function LevelUpModal({
                         const isSelected =
                           data.abilitySelection?.selectedAbility.id === ability.id;
 
-                        // Determine ability type
-                        let abilityType: 'passive' | 'active' | 'reaction' = 'active';
-                        if ('type' in ability) {
-                          abilityType = ability.type as 'passive' | 'active' | 'reaction';
-                        } else if ('description' in ability) {
-                          // For companion abilities, determine from description
-                          const desc = ability.description.toLowerCase();
-                          if (desc.includes('passiva')) {
-                            abilityType = 'passive';
-                          } else if (desc.includes('reativa') || desc.includes('reação')) {
-                            abilityType = 'reaction';
-                          }
-                        }
+                        // All ability types have a 'type' property
+                        const abilityType = ability.type as 'passive' | 'active' | 'reaction';
 
                         // Get optional D&D details if they exist
                         const hasDetails = 'actionType' in ability || 'range' in ability || 'damage' in ability;
