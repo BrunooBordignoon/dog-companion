@@ -53,12 +53,13 @@ export default function SoldadoPage({ readOnly = false, initialData }: SoldadoPa
     }
 
     // Modo normal: carregar do localStorage
-    const selectedCharacter = localStorage.getItem('selected-character');
-    if (selectedCharacter !== 'soldado') {
-      // Redirect to character selection if not soldado
-      router.push('/');
-      return;
-    }
+    // COMENTADO: A página inicial agora é o diagrama de combate, não a seleção de personagem
+    // const selectedCharacter = localStorage.getItem('selected-character');
+    // if (selectedCharacter !== 'soldado') {
+    //   // Redirect to character selection if not soldado
+    //   router.push('/');
+    //   return;
+    // }
 
     // Load selected equipment from localStorage
     const savedEquipment = localStorage.getItem('selected-equipment-soldado');

@@ -53,12 +53,13 @@ export default function DetetivePage({ readOnly = false, initialData }: Detetive
     }
 
     // Modo normal: carregar do localStorage
-    const selectedCharacter = localStorage.getItem('selected-character');
-    if (selectedCharacter !== 'detetive') {
-      // Redirect to character selection if not detetive
-      router.push('/');
-      return;
-    }
+    // COMENTADO: A página inicial agora é o diagrama de combate, não a seleção de personagem
+    // const selectedCharacter = localStorage.getItem('selected-character');
+    // if (selectedCharacter !== 'detetive') {
+    //   // Redirect to character selection if not detetive
+    //   router.push('/');
+    //   return;
+    // }
 
     // Load selected equipment from localStorage
     const savedEquipment = localStorage.getItem('selected-equipment-detetive');

@@ -53,12 +53,13 @@ export default function FeiticeiroPage({ readOnly = false, initialData }: Feitic
     }
 
     // Modo normal: carregar do localStorage
-    const selectedCharacter = localStorage.getItem('selected-character');
-    if (selectedCharacter !== 'feiticeiro') {
-      // Redirect to character selection if not feiticeiro
-      router.push('/');
-      return;
-    }
+    // COMENTADO: A página inicial agora é o diagrama de combate, não a seleção de personagem
+    // const selectedCharacter = localStorage.getItem('selected-character');
+    // if (selectedCharacter !== 'feiticeiro') {
+    //   // Redirect to character selection if not feiticeiro
+    //   router.push('/');
+    //   return;
+    // }
 
     // Load selected equipment from localStorage
     const savedEquipment = localStorage.getItem('selected-equipment-feiticeiro');
